@@ -13,7 +13,7 @@ parser.add_argument('--profiles', default='desktop,web')
 args = parser.parse_args()
 plugin = Path(__file__).resolve().parents[1] / 'app/dsh_plugin/index.mjs'
 revision = hashlib.sha256(b''.join((plugin.parent / name).read_bytes()
-    for name in ('index.mjs','companion-chat.mjs','persona.md'))).hexdigest()[:16]
+    for name in ('index.mjs','companion-chat.mjs','persona.md','persona-maid.md','persona-brat.md'))).hexdigest()[:16]
 plugin_uri = plugin.as_uri() + '?petBuild=' + revision
 home = Path(args.home).resolve()
 begin, end = '# whale-pet-bridge:begin', '# whale-pet-bridge:end'

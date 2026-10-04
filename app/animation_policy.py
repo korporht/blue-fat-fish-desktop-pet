@@ -23,6 +23,7 @@ IDLE_RULES = (
     Rule('idle_tea',.8,75,'tea'), Rule('idle_fishing',.55,120),
     Rule('idle_butterfly',.7,75), Rule('ds_basin',.4,150),
     Rule('swim',.8,95),
+    Rule('ds_sweep',.7,90), Rule('ds_bamboo_copter',.65,110), Rule('ds_bubble_pop',.7,95),
 )
 WORK_POOLS = {
     'thinking': (Rule('dsh_thinking_once',1,0),),

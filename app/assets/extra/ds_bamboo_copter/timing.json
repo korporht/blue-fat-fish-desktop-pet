@@ -1,0 +1,164 @@
+{
+  "set": "ds_bamboo_copter",
+  "fps": 10,
+  "frame_ms": 100,
+  "canvas": [
+    304,
+    320
+  ],
+  "canvas_256_offset": {
+    "x": 24,
+    "y": 64,
+    "meaning": "point (x, y) of the normal 256x256 canvas = (24+x, 64+y) here; draw this frame at (pet_x - 24, pet_y - 64) where (pet_x, pet_y) is the top-left of the normal 256 frame -> no position jump"
+  },
+  "baseline_y": 308,
+  "center_x": 152,
+  "frame_files": "frames/<anim>/NN.png (RGBA 304x320, transparent)",
+  "strips": "spritesheets/<anim>.png (frame i at x = 304*i)",
+  "animations": {
+    "ds_bamboo_copter_takeoff": {
+      "frames": 25,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 2.5,
+      "segments": {
+        "ready": [
+          0,
+          1
+        ],
+        "hold_copter": [
+          2,
+          6
+        ],
+        "copter_on_head": [
+          7,
+          9
+        ],
+        "spin_up": [
+          10,
+          14
+        ],
+        "lift_off": [
+          15,
+          21
+        ],
+        "to_hover": [
+          22,
+          24
+        ]
+      },
+      "notes": "take-off (one-shot): idle -> takes out the copter (1) -> puts it on the head (2), propeller spins up -> lift-off (3) -> rises to the hover height -> hover pose (5); then play ds_bamboo_copter_hover from frame 0"
+    },
+    "ds_bamboo_copter_hover": {
+      "frames": 12,
+      "loop": true,
+      "loop_section": [
+        0,
+        12
+      ],
+      "duration_s": 1.2,
+      "segments": {},
+      "notes": "hover loop 0-11 (5, arms spread): gentle bob 48 +- 3 px above the ground, propeller spinning"
+    },
+    "ds_bamboo_copter_fly_right": {
+      "frames": 12,
+      "loop": true,
+      "loop_section": [
+        0,
+        12
+      ],
+      "duration_s": 1.2,
+      "segments": {},
+      "notes": "fly right loop 0-11 (key 4 as drawn: face turned right, hair / tail trailing left) + speed lines"
+    },
+    "ds_bamboo_copter_to_fly_right": {
+      "frames": 2,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 0.2,
+      "segments": {},
+      "notes": "transition into fly right (2 frames, squash pop sy 0.92 -> 1.04): play after frame 11 of hover / fly_left, then fly_right from frame 2"
+    },
+    "ds_bamboo_copter_to_hover": {
+      "frames": 2,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 0.2,
+      "segments": {},
+      "notes": "transition into hover (2 frames, squash pop): play after frame 11 of fly_left / fly_right, then hover from frame 2"
+    },
+    "ds_bamboo_copter_land": {
+      "frames": 22,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 2.2,
+      "segments": {
+        "descend": [
+          0,
+          4
+        ],
+        "squat_landing": [
+          5,
+          12
+        ],
+        "stand_up": [
+          13,
+          15
+        ],
+        "take_off_copter": [
+          16,
+          18
+        ],
+        "end": [
+          19,
+          21
+        ]
+      },
+      "notes": "landing (one-shot): play after hover frame 11; descends -> squat landing (6) with squash + dust, propeller spins down -> stands up (2) -> takes the copter off (1) -> idle"
+    },
+    "ds_bamboo_copter_fly_left": {
+      "frames": 12,
+      "loop": true,
+      "loop_section": [
+        0,
+        12
+      ],
+      "duration_s": 1.2,
+      "segments": {},
+      "notes": "fly left loop 0-11 = pixel mirror of ds_bamboo_copter_fly_right",
+      "mirror_of": "ds_bamboo_copter_fly_right"
+    },
+    "ds_bamboo_copter_to_fly_left": {
+      "frames": 2,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 0.2,
+      "segments": {},
+      "notes": "transition into fly left (mirror of to_fly_right): play after frame 11 of hover / fly_right, then fly_left from frame 2",
+      "mirror_of": "ds_bamboo_copter_to_fly_right"
+    }
+  },
+  "gifs": {
+    "ds_bamboo_copter": {
+      "path": "previews/ds_bamboo_copter.gif",
+      "frames": 119,
+      "shows": "takeoff -> hover 0-11 -> to_fly_left, fly_left 2-11, 0-11 -> to_fly_right, fly_right 2-11, 0-11 -> to_hover, hover 2-11 -> land"
+    },
+    "ds_bamboo_copter_hover": {
+      "path": "previews/ds_bamboo_copter_hover.gif",
+      "frames": 12,
+      "shows": "the loop 0-11"
+    },
+    "ds_bamboo_copter_fly_left": {
+      "path": "previews/ds_bamboo_copter_fly_left.gif",
+      "frames": 12,
+      "shows": "the loop 0-11"
+    },
+    "ds_bamboo_copter_fly_right": {
+      "path": "previews/ds_bamboo_copter_fly_right.gif",
+      "frames": 12,
+      "shows": "the loop 0-11"
+    }
+  },
+  "sequence_sheet": "previews/ds_bamboo_copter_sheet.png"
+}

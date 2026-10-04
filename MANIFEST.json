@@ -1,6 +1,6 @@
 {
   "name": "blue-fat-fish",
-  "version": "2026.10.01",
+  "version": "2026.10.04",
   "kind": "source",
   "files": [
     {
@@ -15,13 +15,13 @@
     },
     {
       "path": "ASSETS.md",
-      "bytes": 1020,
-      "sha256": "0845fc391747b9e023026173eea338a06f7abd404d59bca74547be63ef088c98"
+      "bytes": 1282,
+      "sha256": "945420951d345bd63164667cc3996af7dd59e7ef4b412254761e5cac5d662b37"
     },
     {
       "path": "CHANGELOG.md",
-      "bytes": 2125,
-      "sha256": "87b24e24a86454ac4cd9bb72ce9f3b84cc86b5cd6bbce3356a5650951228ca48"
+      "bytes": 3400,
+      "sha256": "6b622a78a4bba5ba5ffcc10d81949535ba6ff169170f69d75cf80f294b2f3409"
     },
     {
       "path": "LICENSE",
@@ -30,23 +30,23 @@
     },
     {
       "path": "LICENSE-ART",
-      "bytes": 2101,
-      "sha256": "a0a53128510f77601d10405a265cea702e77c3d4e60a407d09cc9a25ca41838f"
+      "bytes": 2166,
+      "sha256": "4add8c49adeef0606646beb88fd37c4461747efe073b974f9ffc4c2af85fe08a"
     },
     {
       "path": "README.md",
-      "bytes": 7931,
-      "sha256": "a73cd6317a0bc08af5d9485b68bc955dbcd50e13a04e51dcde846b5bbbb10862"
+      "bytes": 9274,
+      "sha256": "a04a6ce505272060a7296b8d8c0b124bf2975512bf2dc5302238b0b9d4b15b29"
     },
     {
       "path": "VERSION",
       "bytes": 11,
-      "sha256": "c40a8eeca3b26c0d19c9ae2b2c445a52d247469abfcc6773bb72bbe800054df9"
+      "sha256": "866b1c75de5b37144e24497c3121b7cc8995902789cf94c143a4147dcd9a144b"
     },
     {
       "path": "app/animation_policy.py",
-      "bytes": 5601,
-      "sha256": "2765cdda8fd0bd81a684bf88408532436e466c428994f17fb967383e748dd627"
+      "bytes": 5692,
+      "sha256": "f7b86fa1153eb048a4fede719c595cb1b4015a12098873b9438e9da1ff801690"
     },
     {
       "path": "app/assets/atlas.json",
@@ -69,9 +69,819 @@
       "sha256": "bd5198868bfe652db8f931ac39359040234e2b236944835e559544ae51569e74"
     },
     {
+      "path": "app/assets/extra/activities.json",
+      "bytes": 18688,
+      "sha256": "75cd6564b7f77eae26457ca2a27ba9f74d6eb157b92cfd8926fc2cdd548476be"
+    },
+    {
       "path": "app/assets/extra/additions.json",
       "bytes": 23078,
       "sha256": "961484dde167535daae261d6a2aacf28593dd991112b0d8f07225f8b0c3b5339"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter/timing.json",
+      "bytes": 4574,
+      "sha256": "bfeb568fde7097d8cb91c08df6b2c029372b0a59768a03b1ba7405a97930e2dd"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/00.png",
+      "bytes": 61139,
+      "sha256": "4677ef7968c39ba778ba0cd6fcb5699c325c78dde37924d46951e4b34436ac7b"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/01.png",
+      "bytes": 60934,
+      "sha256": "104396e60490b39a6bdf7680b692cbbeaf018fffbad04d0ffba5daf81294d5ae"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/02.png",
+      "bytes": 61470,
+      "sha256": "6f3395c786a71c8f8f02c4c829f73d0be2abb037ef26c99261347c7585e703f5"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/03.png",
+      "bytes": 61272,
+      "sha256": "a8f94fe5fc245f5e71a61a81652c403e2c196a22debbb94dffa00f308902802e"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/04.png",
+      "bytes": 61110,
+      "sha256": "f70df575c9bd881e5913cc1516e7941a44f70c1d5b2b44061f6e6fc2e01082f1"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/05.png",
+      "bytes": 60989,
+      "sha256": "e730bfee3553733c453020449232bf6e281b9f1d903713a200974f6e79309fa0"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/06.png",
+      "bytes": 60728,
+      "sha256": "ddd55e56f71a4ab73cd686a38136bb5abf95f2619a18744a4e86074d7021491b"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/07.png",
+      "bytes": 61345,
+      "sha256": "a146eb8cb1706db9e4308b3536064ed597410cab16aeefbd0ef4ebc3ea2f4f31"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/08.png",
+      "bytes": 61195,
+      "sha256": "569e4248449a23eab7a1d7eadbd1ce4e0b862bb265fba6092622d8f856afbce5"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/09.png",
+      "bytes": 61387,
+      "sha256": "a365a4d020d1b35ac71ec7208c9505a495de66d1c495d9add49f5921508f1f86"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/10.png",
+      "bytes": 61020,
+      "sha256": "4d92b9fa2f1b57c28ae1988b8c5f5bae2fcd4d6e9785f70c67d59311849cc431"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_left/11.png",
+      "bytes": 60855,
+      "sha256": "0550abbb8a63bee88ae5d5296610b18a989e8dd4e0ced8f99f6e990340ae0093"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/00.png",
+      "bytes": 60909,
+      "sha256": "a74e26769c0d70edf0cb8d4e7d28cc6a35fb6329a74cb6a2744bb98c6f8820e2"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/01.png",
+      "bytes": 60940,
+      "sha256": "8215da2407afe95a3f3b5f08347dad7a42563dc85256ee09a502723c9e263be4"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/02.png",
+      "bytes": 61464,
+      "sha256": "94100bbe7a977e8b01d1f8a4a38e0d4299486fe5fe6d0e59edbf48d3aa747491"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/03.png",
+      "bytes": 60942,
+      "sha256": "bf5324cc3b8bc6007053048836368ee8f996ecc93667ec034bc9e7615cc8728d"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/04.png",
+      "bytes": 61003,
+      "sha256": "4f5bcae282053f696a220155cb105d706a4145b2f655a03ff857ac50c4865d31"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/05.png",
+      "bytes": 61108,
+      "sha256": "c11d8759ad72db5d8abac7b7170d1e42319619f5ed71d5928924de785ca8c0b4"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/06.png",
+      "bytes": 60514,
+      "sha256": "789cc31f44ff694c2ba72070598107a5b09751fc3a7e90f440c4cc7b6dc9d77b"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/07.png",
+      "bytes": 61356,
+      "sha256": "47b29e5dac79a2f298610b3027d98124e5463c95ce1d9a80f814aabe4fb11a68"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/08.png",
+      "bytes": 61209,
+      "sha256": "9b94af0aa4d1ef5db65094ccc4787305f55bdda028eae3b4dbe546aef5ef54e9"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/09.png",
+      "bytes": 61313,
+      "sha256": "4d1c413f2de1eb2d4439e4c2c7b0ff2ce143b39630ad6789dc1a8c914d18bbd4"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/10.png",
+      "bytes": 60947,
+      "sha256": "3d1b5f7454fd014a986eca720513a4052a0ad8dce018a564b7e17fd4f37c7b1f"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_fly_right/11.png",
+      "bytes": 61016,
+      "sha256": "acf2d0ae36234b9e7e3c221c5df0d1e59fa35bd62e54297b6c1b98b9d1bcbc5b"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/00.png",
+      "bytes": 58973,
+      "sha256": "1a7e287211011837f29e48091849dcc5a3463ff074f6637a8b826b4109e6ece0"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/01.png",
+      "bytes": 59555,
+      "sha256": "d99537942ec2e465ece52ed6bd638aa9f0f6454d4a64e66f9be073ec5273e506"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/02.png",
+      "bytes": 58813,
+      "sha256": "ca708617867edc067e59e84f17bcf748afa294340cf7e76070809caa1862f6ec"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/03.png",
+      "bytes": 59267,
+      "sha256": "bed4f74a50aa8ddac9d52320c34c74f9a9c8ec58e7b59250f95a2654e911a30b"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/04.png",
+      "bytes": 58708,
+      "sha256": "19e31e238c5bdc17b8025295f2cf0f0b16d472ea18a3eb481f965f18828baa59"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/05.png",
+      "bytes": 59143,
+      "sha256": "4f82d0378e4f2f7e909404f2cd67edada69e301da577b1ed660d38dde9453cbb"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/06.png",
+      "bytes": 59369,
+      "sha256": "5f1eff5aa41ce69484dd4da7b7b94a5df5e669d16be4ee231f0fde984f2ef7a9"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/07.png",
+      "bytes": 58686,
+      "sha256": "570e3ebe24695a02e99f63a1e4354a68b78e78de0b411f6636798ec2047063ab"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/08.png",
+      "bytes": 59230,
+      "sha256": "b8aeb6ecd215d4d53e7df031eb6c163a91380fad1e75fbbf2f6424d0cc6dbe06"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/09.png",
+      "bytes": 59373,
+      "sha256": "59311bcda5d8f16c188eb96d9468cadae052b5cd5c570b087aa752e3f39d6da2"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/10.png",
+      "bytes": 59203,
+      "sha256": "6d832ee60a6a531de39e323f5914502191e3ff10d7ddb8ddcc9981647db79674"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_hover/11.png",
+      "bytes": 58714,
+      "sha256": "3a28eebde720b7f3a4e6181bfd28d1e08b3b7561463520b0719bdee88ce563d0"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/00.png",
+      "bytes": 58790,
+      "sha256": "d8bf27c986fceef63d18c10d70b49993c8ade1ed1c0078c6fa6e75a0b9e70ab7"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/01.png",
+      "bytes": 58661,
+      "sha256": "519ff4fd133b6c44351e281646f75ffa1b6db3e09134bfc4a09626d8a870f8b8"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/02.png",
+      "bytes": 60018,
+      "sha256": "1be2b2611609db6681e4facf750b244f264257d724c4c00358f2cd4f336a55de"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/03.png",
+      "bytes": 60960,
+      "sha256": "4e6f5a23dd39268efa3318973309082073bb2302e1a38accfcd26dd2ef7755ae"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/04.png",
+      "bytes": 62084,
+      "sha256": "333d6d06e5d064e9cc30f8d74892e2c4d947e66d3d2e5eff6ab8cae3d95e3588"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/05.png",
+      "bytes": 51218,
+      "sha256": "1998eafe35901d94d9acd68951aacc4d7c7085c84db0f69d20901e3f0db97340"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/06.png",
+      "bytes": 57181,
+      "sha256": "6ebb29deb66c0fe941820d92e7f6f628fcd9bb6f643799ebf4d88ca4913705d7"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/07.png",
+      "bytes": 56059,
+      "sha256": "d654cc4d1b0498ebf655889a6991e31da079e4193569af441400fbf751ef14ee"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/08.png",
+      "bytes": 55858,
+      "sha256": "babf008ede653f2fcd3c82732d382dd8be63805d6aa09e728f8ca241ca61ca0c"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/09.png",
+      "bytes": 54147,
+      "sha256": "82326d1375f2383cd1f0165aeaf4499c4cc11fa29be28aa1b7039077e583bf83"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/10.png",
+      "bytes": 53327,
+      "sha256": "2bce6ed8e7a8fe35e0c1b597db28f2b611f88fba27b9273644ebc420397bdadb"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/11.png",
+      "bytes": 51065,
+      "sha256": "a535b7680cedaa34914bb5e7e172741a06a929729abdcbfdc3b4817b1af9cf2b"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/12.png",
+      "bytes": 51065,
+      "sha256": "a535b7680cedaa34914bb5e7e172741a06a929729abdcbfdc3b4817b1af9cf2b"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/13.png",
+      "bytes": 52566,
+      "sha256": "c9ab54caa0790d707212011e98b52671bfbb4980d96534c81f9f2ab16c5623dc"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/14.png",
+      "bytes": 54693,
+      "sha256": "671c4fc2fe17b4903efb6d8375518fb2978040dc355af781b69ba9b1e7432000"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/15.png",
+      "bytes": 53927,
+      "sha256": "293329700595fb53640e3345a0405ed5f31004152017e8543467704088402a44"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/16.png",
+      "bytes": 55170,
+      "sha256": "7789a513c0ecf3b7dfb0fe2727ac1b64b9f99f22f512c938746d82ef56e0fb9d"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/17.png",
+      "bytes": 56587,
+      "sha256": "f98d0c4ec5c691248d18f19b9df4ecaebbe7d997afb4cbced92128bb5a268dbd"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/18.png",
+      "bytes": 56367,
+      "sha256": "2ba0fa86603724ef6c1dfae0586a81be88b2554fb1595feff9f28becc851f947"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/19.png",
+      "bytes": 58392,
+      "sha256": "0954ed8019d942851c8e81e2d7483e646705db5a2d987b33703a6db31e89175a"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/20.png",
+      "bytes": 57824,
+      "sha256": "ba826e838bcb7d0176b0ecb24469d12c572b0aa7d599ed1709a5834a46875712"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_land/21.png",
+      "bytes": 57945,
+      "sha256": "5b7b9601fa60a077a88da932cb43a3075b537159b3a1faf59128d7d82d598156"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/00.png",
+      "bytes": 57757,
+      "sha256": "f9847840cff7d269abf394894106863443268e43b0bfa90808a477420093a2a7"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/01.png",
+      "bytes": 57271,
+      "sha256": "263babe9b5136446f35ee764dbab7e1a9d74fde085f702184c8aa4c3822df5d8"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/02.png",
+      "bytes": 54499,
+      "sha256": "f6679d93e277ea677c9ccdb47551d2e21e854e6442d030a41f57580770f45dcb"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/03.png",
+      "bytes": 57216,
+      "sha256": "797577bbef119c424a3c9c82c47c149b4d68187c7288bfadc741be3e6b0ceda2"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/04.png",
+      "bytes": 56367,
+      "sha256": "2ba0fa86603724ef6c1dfae0586a81be88b2554fb1595feff9f28becc851f947"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/05.png",
+      "bytes": 56367,
+      "sha256": "2ba0fa86603724ef6c1dfae0586a81be88b2554fb1595feff9f28becc851f947"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/06.png",
+      "bytes": 56367,
+      "sha256": "2ba0fa86603724ef6c1dfae0586a81be88b2554fb1595feff9f28becc851f947"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/07.png",
+      "bytes": 53780,
+      "sha256": "6fd1b0f666cb34d73f6c98d49dba83a6e9ab69b091fc7a6a4fa8bcb7b9b3ef96"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/08.png",
+      "bytes": 55939,
+      "sha256": "c0c5bba9bbee571b8e868f6bb70bbbdf407be286f2ca07dc7bd9551bd52cbc13"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/09.png",
+      "bytes": 55297,
+      "sha256": "f4b29d91c2babe508d1ade4655c547e0f1aa4c4d5572cd25290e18e58f257118"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/10.png",
+      "bytes": 55374,
+      "sha256": "112234356d05c94b9dfd107794ae7f31d157109afbf920e58f54b9c9992d5133"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/11.png",
+      "bytes": 58011,
+      "sha256": "c9ecbb3636ed5ab3c3b3419b62a354500bd3855945670bfdd3f4e11ce461f026"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/12.png",
+      "bytes": 58975,
+      "sha256": "70a08a17221c7289b7d09b1dd20738811c2b23984af132231b3e2880045234e4"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/13.png",
+      "bytes": 59247,
+      "sha256": "ef1718e1982be5b73bc4cc04291fe7dd3ce4c42b181b2a3fe226882ce25169fe"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/14.png",
+      "bytes": 57055,
+      "sha256": "29f77bcc87948eb4de4f30a502fcb322cb0a619c250e001ff394bb7b2d8bc177"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/15.png",
+      "bytes": 63368,
+      "sha256": "a9e4f503aa69680e75dd5e1e6248059353be29e703508923bb8982074d6908fb"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/16.png",
+      "bytes": 62950,
+      "sha256": "4f61626c120a5c762873bd44ed3c33685485bac47f2e2d3f39452891c0e88eb4"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/17.png",
+      "bytes": 62045,
+      "sha256": "c4bbf734e9fbbe0f346f56430924697e6ea6a3df9ab0884d1364e989969786e3"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/18.png",
+      "bytes": 61650,
+      "sha256": "c2465eedeb1e96e54d613a7646a7527887b48f5d3c8e7bd2da5c6a65ae5dd903"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/19.png",
+      "bytes": 59769,
+      "sha256": "5a55f5a3e0cd4d3cf35e1777ad91ec7167323da320f8b9c8bff8201406c6e801"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/20.png",
+      "bytes": 60288,
+      "sha256": "9757c7ca5c48ea2d6a2399c0a704137db02966005cf87c8131217a8855c6fc9a"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/21.png",
+      "bytes": 60639,
+      "sha256": "3e8cbe30b988330f8238fc3b793b30ea5238a0960db3bd7bd20c148967166631"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/22.png",
+      "bytes": 57669,
+      "sha256": "c1b9196c0b9bb91a624b1c7846906731664e5e4d682c3c5d7678324832ced88f"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/23.png",
+      "bytes": 59626,
+      "sha256": "9042502b73f343c31c8b758b394f7b66adf4b9c30e969cdb99cae30617c1f0c6"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_takeoff/24.png",
+      "bytes": 58569,
+      "sha256": "d994d3a320adcc6fcf2c0cebfce17d9304ed7014b248452e2924bdf0239147e2"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_to_fly_left/00.png",
+      "bytes": 58254,
+      "sha256": "e04b68ecac2f245b02c6bdf6ca20568171f179842be67088553e878ac6677eb9"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_to_fly_left/01.png",
+      "bytes": 62333,
+      "sha256": "1a94a7083aecd8e7ab8f6a916591d748615d14f787f70993e0a619185234fd71"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_to_fly_right/00.png",
+      "bytes": 58099,
+      "sha256": "b19db39e622594a869feabd2d2ac9347fde2c6191c7b4e3ffa7ea654bd56fa22"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_to_fly_right/01.png",
+      "bytes": 62334,
+      "sha256": "ce564e6ea92a5a469bab6649dc1a053ee408668cd8b33a985ea0bf9082b91d8e"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_to_hover/00.png",
+      "bytes": 56011,
+      "sha256": "3c4e6d88409f1973ff49f8ac15a5afef7be5a0f2b6dab4fabf70adbd8ddc04d0"
+    },
+    {
+      "path": "app/assets/extra/ds_bamboo_copter_to_hover/01.png",
+      "bytes": 60251,
+      "sha256": "2738d1ffc1b7bc4db7f69d1d827ff9e23286f29cf0b7b0deecfd726759432b5b"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/00.png",
+      "bytes": 58613,
+      "sha256": "1bbe621ce64369f5b04122e069f96df126413c8762f0673d1c7981c175daadf1"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/01.png",
+      "bytes": 58056,
+      "sha256": "d5f8147b94326f36355373f2c9ca1885eea23e9a84cab98404e416c020f6b260"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/02.png",
+      "bytes": 47415,
+      "sha256": "bbfa9c1ec4429b8dba69e501b1f6fecc98e964239124cdf8ca158a3b05c08c4c"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/03.png",
+      "bytes": 49291,
+      "sha256": "c43394dc6e0685949895282eab1ea884c6ec8006e57f4786b3825fe5e3cae66d"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/04.png",
+      "bytes": 49312,
+      "sha256": "25cb26582138d192bdc7f6f54642db28bbf19c783f4a89f2d381431279db9de8"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/05.png",
+      "bytes": 49726,
+      "sha256": "01bbcbc048f5dc39ecd3f80a6555367f78bb746bb1eedb8bb14d7b315bc8aacb"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/06.png",
+      "bytes": 50453,
+      "sha256": "91662411d2e01a1151fc788538d138b504fc7308aeb55f143aedfb9d2607f907"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/07.png",
+      "bytes": 51854,
+      "sha256": "c7a25fa434a8db1e53c23d7d86a9aab13733ac500e02ac19b1032ba78c0b665f"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/08.png",
+      "bytes": 53679,
+      "sha256": "54783f8e3ec492f786a0731e0b3d35b8eef8e0f82d41a2409aef2baa80972402"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/09.png",
+      "bytes": 55146,
+      "sha256": "3680d72d92e8843b688d4903bf4ad68eb5f68f7237567b0d7f3900c4dd1ff44c"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/10.png",
+      "bytes": 56915,
+      "sha256": "ba753001fe813fadd12f4fc81bd6b728189e28d45c1b5a0e8f7a3ceb43d5fa3b"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/11.png",
+      "bytes": 56981,
+      "sha256": "c678fdd6155fecf8eb0bbb069de088e8b31197bc37f35ff53574364a48f7e4b1"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/12.png",
+      "bytes": 60479,
+      "sha256": "ea6bc206bbe303c7427d4fa42fe84b6b3accf0f50df614f3310a8bc76985a827"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/13.png",
+      "bytes": 63438,
+      "sha256": "3fdd32d2fd5dfcb611cfb7d6afbc5ade94ebc0f602c42021733ac9b7e2a1ad0b"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/14.png",
+      "bytes": 64431,
+      "sha256": "05080670e726deaf7cd9eda09e7ac5bf40a056b5ae2183941c82d7f8b8c1a277"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/15.png",
+      "bytes": 67628,
+      "sha256": "5d48cd337bfec571d1bc75e8195fc9c030d4700c04c95f0b15fb27addb35f1d6"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/16.png",
+      "bytes": 72205,
+      "sha256": "d7de7fc14b239f640bf02071970826694d41f1e145c7613954594e3a241965b1"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/17.png",
+      "bytes": 78319,
+      "sha256": "0eb93114c99388c484bca37951a6e6cc5ce3b9c1a0963a9518ae30fb4810fe19"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/18.png",
+      "bytes": 82144,
+      "sha256": "d84dac37d4c1583c9c9fe09c21aefc638a0c3d60e7969ee16e2a53f9e9857ce3"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/19.png",
+      "bytes": 83171,
+      "sha256": "0016551c8f33c557e036b59ec51076af6486a5e54804fbd21c349cdb41356d6e"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/20.png",
+      "bytes": 87605,
+      "sha256": "5c6b6f4fb3a73931280263a3a1bb9c47b10439ccaed490d99ea814f7abfc9fa9"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/21.png",
+      "bytes": 88165,
+      "sha256": "c597bb294fc96c8fe11d6ef99d0992f6ce2682ddb2bce9e8d6818ba9257c02c2"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/22.png",
+      "bytes": 87376,
+      "sha256": "3e5d22875a67e750369faf5aff93710ebb7a24f62457d40a140e743ce2ec1e28"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/23.png",
+      "bytes": 88193,
+      "sha256": "7aa56b57b1b371050d90ac86d74ccc32e6f7791caad6dc131559d91308477203"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/24.png",
+      "bytes": 89333,
+      "sha256": "f31125ab4bc5c9def9a40f0c78f897fbe1f56354d5d75b8613cc7200837053b3"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/25.png",
+      "bytes": 89744,
+      "sha256": "f14a243f749c4d100c236cd1009336032c3bcdbcf7ecb21b03462f7d28931cc3"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/26.png",
+      "bytes": 90405,
+      "sha256": "9d7c8435a72a6c80843f119bb233b21f4bd97b28678acee91f2ecc6c094b6ad4"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/27.png",
+      "bytes": 90766,
+      "sha256": "33641b32b6056ce4af04b1e1da240850b8c17fd827f100f9a12d24a1ee6a2e0c"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/28.png",
+      "bytes": 90265,
+      "sha256": "118a4f092e6a295b22ef42d570a44a43a20fb8961f7bf52f256108637a33c34b"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/29.png",
+      "bytes": 91372,
+      "sha256": "fa9ff67c1502db0fc01e60d95f0590aed6da404531c8081c36f3cc23fdd5d9b5"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/30.png",
+      "bytes": 91738,
+      "sha256": "bb90a85e9f55b41c603043f40ac32516b6f54d1b3eebae4479e40403a28be080"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/31.png",
+      "bytes": 92001,
+      "sha256": "95ea4d3e054738028dd947578bc62cece25bb0f0f9c03e03d666988fdbb20916"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/32.png",
+      "bytes": 165587,
+      "sha256": "95948d40d2121ae78df98e4c06a3ab18bcb04fd69c0ba2684d0fdca759787350"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/33.png",
+      "bytes": 170012,
+      "sha256": "a4990990038bbb709d650c2fcd494073288723c0806146d56559ffa17e6d52c8"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/34.png",
+      "bytes": 171602,
+      "sha256": "7f08300576d43e2930fe4070ce4a8b28313434770a57dd087345ba1d559cf1b2"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/35.png",
+      "bytes": 171868,
+      "sha256": "48a52b98bdd904684724b873d6b75a2016ad4cd9f815e987dc2795041defd10c"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/36.png",
+      "bytes": 166490,
+      "sha256": "cad971748c5714f80a62a01d66b480d0236f64ff2f779bba2857c80ba8d62f35"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/37.png",
+      "bytes": 56858,
+      "sha256": "4ebf50d451c948f77bc684c68d4340f1a43dd1b839d2bc2ca69dce2d33e0bc09"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/38.png",
+      "bytes": 62331,
+      "sha256": "d255971adf7f0b77aacacf8ebdd14a8213fd5ed056fac050580d8457b461fd3f"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/39.png",
+      "bytes": 61296,
+      "sha256": "3b43725c9bcb5407644f41ba9a1ce4d842806ad9739066f4bd900aca04a68d6f"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/40.png",
+      "bytes": 61262,
+      "sha256": "331d4fa35f03d53ee07b359237a8c905e20c4e0ab435c4bac6924dcdcde125a2"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/41.png",
+      "bytes": 60899,
+      "sha256": "f1310283954f2b0e9dec25d2f31487ed4daa948b38c1bc45717d4c43c5da0f31"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/42.png",
+      "bytes": 61191,
+      "sha256": "cacfb0ce9e2976da1d037b7c10adc42858c9346d97163214d2bbebb11328f7da"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/43.png",
+      "bytes": 61248,
+      "sha256": "8ce4b392b278a74677cb68864846f270a5cf6533efbd369d60fe8b35782e5ee5"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/44.png",
+      "bytes": 61092,
+      "sha256": "abfdd661e363ee952f7c0df1664314b1d9a443ee5b57769fe0d6e27b759b1fd4"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/45.png",
+      "bytes": 61178,
+      "sha256": "0801e9bc78c2d747580dfc580a9f2960a13dc90d2f6aee70274c45e9dae67b9d"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/46.png",
+      "bytes": 61393,
+      "sha256": "0c6500a5c12e3db7f4ce7a1b519cff93dcdbd71f13179919dd9dfb18d564e02e"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/47.png",
+      "bytes": 61202,
+      "sha256": "6c994a7ef61f7f142fd69042a110f91f186d7c34bf4fdd06df411c83b68869de"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/48.png",
+      "bytes": 61012,
+      "sha256": "7eaaac8d123f4d5e9ad11830ad63943612a8fc683cbf9fd146b50fda6cc367f2"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/49.png",
+      "bytes": 60692,
+      "sha256": "a324c3e869e435307f306a4352dfd1690142b235bfb3a4f96aafa46f35e8d35c"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/50.png",
+      "bytes": 60955,
+      "sha256": "2d6f3121d7a39b26fee5b9c0aa866db61131555a5ae05dbdc0b4985ff337ea8e"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/51.png",
+      "bytes": 61232,
+      "sha256": "af9788e59ea73808e449554531c6e038b1fc6e3858945b82635fe52173b3452d"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/52.png",
+      "bytes": 54138,
+      "sha256": "694bcc986eb4c22799c90c10fe6fe30a10d67539bc410e82feda5ea1ecf68827"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/53.png",
+      "bytes": 56568,
+      "sha256": "c10794abcdb5f51777345889f78798cd00c011635f41a55e55ac68d1898d5ce4"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/54.png",
+      "bytes": 55535,
+      "sha256": "15a8f13cb945d4fff309a7548747ee88747cdb3056e6bfc37051f11f7a09ce61"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/55.png",
+      "bytes": 56440,
+      "sha256": "c7c9191bc4003c6022eada91efb42b30e0080e25c53b4df676f313dab04fcc9e"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/56.png",
+      "bytes": 57122,
+      "sha256": "ee735821a1f7f6202c92d0fb89fe0a93e241ec2c3da192432d958e55b7b4e991"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/57.png",
+      "bytes": 57507,
+      "sha256": "55ca1fdfa072e8b6fd13263ef4bf38a3485f041981992dd4bb849d26c065f425"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/58.png",
+      "bytes": 56555,
+      "sha256": "82d233a44398efef699b4226e7eb9a0cc2b10abb06fd0de20c79e646c5d7fbab"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/59.png",
+      "bytes": 55401,
+      "sha256": "4b5139423c7dfd137813bf607d4ed76294bc3d342a7b3ad80990e9493f2ff42c"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/60.png",
+      "bytes": 55154,
+      "sha256": "bd879aa8f55e6d7e2387f985c0ddd96f99be86ec9b26c243c2077c60d5e2e352"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/61.png",
+      "bytes": 55050,
+      "sha256": "560ffcd7976660c65bf039ba69761fc0b51bab8c78fb7b86f55877cdeb44aae3"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/62.png",
+      "bytes": 54921,
+      "sha256": "19a669f35bf832694f0171bb3c70b61df953e744aa152ea8e94ae35d704898c2"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/63.png",
+      "bytes": 54645,
+      "sha256": "6fdd71f36e245d6e73ccd06320e75c10467991f1d0042f7020c922b0f50c80a3"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/64.png",
+      "bytes": 54403,
+      "sha256": "a507ef414218c08b8c9cd6e58abc9f153d267d36d6302b5513a51283690283b6"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/65.png",
+      "bytes": 53368,
+      "sha256": "f9a85b21ff27028edf7f37d7dffa3bbf6dddd6930257817c401a4e4ad26fecc1"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/66.png",
+      "bytes": 52564,
+      "sha256": "36009cd098779dc8413fcde758a0bc85fd33c75cddce408d9c1aff8e63220448"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/67.png",
+      "bytes": 59170,
+      "sha256": "5b14ff3872661abceb819268f01870869c5db518965c7809bd432bdfa20e201e"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/68.png",
+      "bytes": 58748,
+      "sha256": "ed7e0015b886f8a026ded3288868845bf0aed8d17ebcde3ffe82cb5a15f0ba68"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/69.png",
+      "bytes": 58753,
+      "sha256": "131ec2920286b4d18cd234d0eb6063733280ca532d52d9a6081285a56fb52f2b"
+    },
+    {
+      "path": "app/assets/extra/ds_bubble_pop/timing.json",
+      "bytes": 1676,
+      "sha256": "d17ffe5050df01a79d9b527ab79e68073eef22704d66003ea1fc356a216ebb7c"
     },
     {
       "path": "app/assets/extra/ds_code_eureka/00.png",
@@ -947,6 +1757,201 @@
       "path": "app/assets/extra/ds_full_belly_nobubble/96.png",
       "bytes": 54436,
       "sha256": "50888fc2238a973bfebcb2a04e83f2c7218eba0690393a024db852359a3e7826"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep/timing.json",
+      "bytes": 2381,
+      "sha256": "d170e1bb45107e174839488227738ba69d52d9101e0a9e59ef2eee5d21d57d8e"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/00.png",
+      "bytes": 52579,
+      "sha256": "f8e698b444df39fa2f7eb6624831a1dcedf65b3a1f3685de8565c92878407ce5"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/01.png",
+      "bytes": 56681,
+      "sha256": "5552f3d4515223a36ec9361cbc69e0a19436a722a775d8b9386e07b86c6b59b4"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/02.png",
+      "bytes": 56144,
+      "sha256": "eb51003384e558e87656a5091716f07863834be19a993eeddd1a56b55f242ff9"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/03.png",
+      "bytes": 56559,
+      "sha256": "d82ea46817d2b4a21981c7be0476158b7988927c5cf111cee52c1f9b74fb44f0"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/04.png",
+      "bytes": 55407,
+      "sha256": "924c63aa4bf6b15f1de9d0be1cc4d838d7423663bd6bc626d0f6d468f1e1d6f4"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/05.png",
+      "bytes": 55115,
+      "sha256": "75c708069613aa79f067474911f321a5f224e6652d44bebbca53c7fb36dfc290"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/06.png",
+      "bytes": 55153,
+      "sha256": "3425d4054ba853baca34e48763206889f936daef848b65b8ae67b1f899b50180"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/07.png",
+      "bytes": 55270,
+      "sha256": "b90ec46a485a9327617882587ef66ce43d870b6ee7f35961e2abd3fa22ef22ed"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/08.png",
+      "bytes": 55376,
+      "sha256": "d6bf08b56ae7d32352df2b187f95bb32f4e215d20bd45dbd3464fdf87dd06773"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/09.png",
+      "bytes": 55106,
+      "sha256": "48bac16a056b00ade55344dd01f6dfe9989e7529da213e32d5a39e7eef93ddd8"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/10.png",
+      "bytes": 55261,
+      "sha256": "3a4702e5171c7bba2e1e5b36cb0a7abd841f8abcce3fa9d165eb3243daa3e595"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/11.png",
+      "bytes": 55482,
+      "sha256": "24224b4c2bfb30f50e203c7d737e2a21735d4592744a138f25b8930ef48747d0"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/12.png",
+      "bytes": 55474,
+      "sha256": "be47ccc7313c4640bf75454710140eafc83d7fadd9fa63e2025938831b8b73cf"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/13.png",
+      "bytes": 55597,
+      "sha256": "9c2bded1d9f7ca319a766c8cd4a532b02715eb5db98d47b286ca1287fd26f347"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/14.png",
+      "bytes": 55525,
+      "sha256": "77e6015322d37eb77cf6865d42b55b08c53dbf7647125293c02fa8af9c02d988"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/15.png",
+      "bytes": 55130,
+      "sha256": "31cc09d1fbfeaf06cb4d5aa64dad1ac6c67ebeea629f0b37bfe02b944e3c79ab"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/16.png",
+      "bytes": 55262,
+      "sha256": "a3f7472dc4775341bcf4860568b6e8aaf5cbeed48000da441fc65c99ca7a6860"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_end/17.png",
+      "bytes": 55668,
+      "sha256": "bceaea22c3c4d62ed31cf77d77c02426fcadb968d1f271ae575ed39657a08d68"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/00.png",
+      "bytes": 52684,
+      "sha256": "4f6fa0c1e234669f7d35399762a2c95fbf0bc05d49c81daca8fd7a0bb42fe051"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/01.png",
+      "bytes": 53828,
+      "sha256": "b32f2c708feb58a9739ee7fad7d158156163a3f7d6cca2e8112f90a8f72232c6"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/02.png",
+      "bytes": 53672,
+      "sha256": "ca54bf52329bb4415cbda459469ad85d34fe885bd0e730d5502df6cce343517b"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/03.png",
+      "bytes": 53133,
+      "sha256": "7f7a34e4953d8a9ee2d71f66c684ea6def1199d17168a3ff13c769c191847282"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/04.png",
+      "bytes": 54114,
+      "sha256": "e86087e2cba726dd08ba9234b1f3c466fb016bbaeee4737144c3dcfccf4a9cc0"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/05.png",
+      "bytes": 55885,
+      "sha256": "536c276a07ab68dd6224c7b7a04dd110364fab410d7a37576b62577f13a99c4c"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/06.png",
+      "bytes": 55678,
+      "sha256": "1a0707ec28a8acfba7aece714571d09e548684390aa7e5973f7bb2d27eacaf44"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/07.png",
+      "bytes": 55844,
+      "sha256": "09c04d147a25a9874d7352ca72d2bc97720de1da482c741d6dc8ef7f35a1f4d1"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/08.png",
+      "bytes": 55346,
+      "sha256": "ac4a2f7c105f5d15f881f608037d1191fd38e563821b079b15b943aa9a193139"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/09.png",
+      "bytes": 56463,
+      "sha256": "cc9b344ec12cc04cd048eecaf46829e3d96730b091e8a00d342872ffd977d1b3"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/10.png",
+      "bytes": 55146,
+      "sha256": "15f3876f2d08c2b2c727e8aa4f515d72783a34555c604df657d3e8768cf260f9"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/11.png",
+      "bytes": 55483,
+      "sha256": "034f7bf468deacca0e80f0598d66159cebf37d43d7f86ff33a9b233d92104b22"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/12.png",
+      "bytes": 55684,
+      "sha256": "3d098d36d55f1bfc52e46c816f6c7fa399d31f3f7d7291597775e2edd02cb18b"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/13.png",
+      "bytes": 57233,
+      "sha256": "b3ee352643a2987a0c1f7bceedf4cde99ae139be0bab726b255a02565a2db036"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/14.png",
+      "bytes": 55435,
+      "sha256": "bbab8af5ccad408e2d6b7cbaf897a3d613dc8bece7c7da1f688bb52020105d9e"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_loop/15.png",
+      "bytes": 55296,
+      "sha256": "11daf035b7ad77bef73120486ebcdd2f7d295e3fca4b54d51767622a5ec69cd7"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_start/00.png",
+      "bytes": 57725,
+      "sha256": "e7d1d786566de8cedbc42738897921f75e0ed3011fd2de437846ac0ec3054b3e"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_start/01.png",
+      "bytes": 57262,
+      "sha256": "b2edb1c7ced445173f9d0c515d3f829a63b21d51bd3723784f5610d5cb4bfc0d"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_start/02.png",
+      "bytes": 52268,
+      "sha256": "f8711f552a63d50cef46e355bd14f2e50606a6dce7953d1cbb65f3954e29f0b3"
+    },
+    {
+      "path": "app/assets/extra/ds_sweep_start/03.png",
+      "bytes": 54200,
+      "sha256": "3d2988f8a4ce83fcf541eec95ca5addd7c4a06473c9d983ae96cfc10d3ecbf6b"
     },
     {
       "path": "app/assets/extra/ds_swim_full/00.png",
@@ -2085,8 +3090,8 @@
     },
     {
       "path": "app/companion_bubble.py",
-      "bytes": 2526,
-      "sha256": "9598bae712a480dc2bf0a40e1cee88a6f3acc02a9ec334566f86e28af3ce17ba"
+      "bytes": 2908,
+      "sha256": "fa30761640457c6b47a9225ec3861ba693fe53d949c7cc4abf259927f522d79d"
     },
     {
       "path": "app/companion_memory.py",
@@ -2094,29 +3099,49 @@
       "sha256": "cf838d24a212b032e673e468dc191e8ea526b06fb9b7e30b3fce01506c7c3be0"
     },
     {
+      "path": "app/companion_tts.py",
+      "bytes": 19137,
+      "sha256": "4e83b1dda8d67ba254f2e784be4487e5c49744cff38de2d772ee699210addf4d"
+    },
+    {
       "path": "app/conversation_reactions.py",
-      "bytes": 4146,
-      "sha256": "209611ab174c37dc86dba881bb1aa8c77b184cbfa7269238aaaf1cce91ca19e9"
+      "bytes": 4510,
+      "sha256": "7da4d874fb40acfd25df283a0ba073b922f0d40b033dce9dd23e7d8bc9387930"
     },
     {
       "path": "app/dsh_companion.py",
-      "bytes": 60050,
-      "sha256": "657d07a1f045f3a5028880e229a7f6e0ed39bec63472b205131e2d9dcb0f16a1"
+      "bytes": 61959,
+      "sha256": "bdf17afa6b430f68e1dfb6d105d46c5de21efd4a43ea615ec99e49d2587b22ab"
     },
     {
       "path": "app/dsh_plugin/companion-chat.mjs",
-      "bytes": 24023,
-      "sha256": "7b3e4e50b80d82b283eedbe82331f1656d22d324ba93e07f925f9507b22fa4bb"
+      "bytes": 24735,
+      "sha256": "4a5b6efcd32bc3cbb2f6c32552d491f62fecbe3ea295b1b8a129335b96ab6407"
     },
     {
       "path": "app/dsh_plugin/index.mjs",
-      "bytes": 12312,
-      "sha256": "1456d1e9a1755ca686f2446859fd9009a109d2ad4f91fcbf6559d278f23b81b1"
+      "bytes": 12353,
+      "sha256": "9078ee7ae803debe8deeaa4f706b49094c7b95c2b7f0a38ee1a81537cf92b447"
+    },
+    {
+      "path": "app/dsh_plugin/persona-brat.md",
+      "bytes": 1733,
+      "sha256": "ee985d96efeb2267d0b9a4580d1d939537e0d17cd5a23970e3ec2cf406683b11"
+    },
+    {
+      "path": "app/dsh_plugin/persona-maid.md",
+      "bytes": 1171,
+      "sha256": "3272641b6adce32ccec67354257a219ca6fd7386b22f5772a50aa7e732bb4b9b"
     },
     {
       "path": "app/dsh_plugin/persona.md",
-      "bytes": 3958,
-      "sha256": "55127faf28b531c2460073c7f0ab2ca0f3cc0eec8f8089e8856f5f36d335c422"
+      "bytes": 3870,
+      "sha256": "5bcb0349c66c6a1964953bd21545f31de80d1b508a4b60b00a683c41f5676a4a"
+    },
+    {
+      "path": "app/extra_activities.py",
+      "bytes": 906,
+      "sha256": "5b0d775a53158185d6bb08062959808a669cfb093f00d08b89f1b7ae16f4f8a4"
     },
     {
       "path": "app/pet_support.py",
@@ -2125,18 +3150,23 @@
     },
     {
       "path": "app/requirements.txt",
-      "bytes": 13,
-      "sha256": "6880a7f1237221dc51fbbf44d04570fcf2b6ad8eea3bf7ad9ae86024dbfd4006"
+      "bytes": 46,
+      "sha256": "efe07d7c18bdb559c1e021bbf6d20670db97a424087ea9132f8272f11fa60bce"
     },
     {
       "path": "app/run_mac.command",
-      "bytes": 207,
-      "sha256": "ec117270818e38fe42d08b776bf106ed9dc17fa99da5dbcd43b9f23322e75356"
+      "bytes": 323,
+      "sha256": "cfea45cede9a36caae093b581219761c6cd7ba2a39d181e6483694eea17036f4"
     },
     {
       "path": "app/run_windows.bat",
-      "bytes": 1229,
-      "sha256": "7d5e0a822944f53fd81fe7db277da989fdc85ff38493d53c848808210882d44e"
+      "bytes": 1289,
+      "sha256": "7a77571b51ca940eb4ff1b06de25d701b0495f9efd1448d31de5aee9932ffd7d"
+    },
+    {
+      "path": "app/runtime_environment.py",
+      "bytes": 1418,
+      "sha256": "1709aab8efe8730d26b650a4503117d1dd95bfaa7b290859584fea01654657c5"
     },
     {
       "path": "app/swim_behavior.py",
@@ -2150,8 +3180,8 @@
     },
     {
       "path": "app/tests/companion-chat.test.mjs",
-      "bytes": 21547,
-      "sha256": "c581bf9ef1d7015668358c325b6708c4fa0cffd9498a0191712de4391bfa377a"
+      "bytes": 23845,
+      "sha256": "65006b53e6565366d965d062dd98e9f649138fc3e428fa49ca4a00a8a9029214"
     },
     {
       "path": "app/tests/test_animation_policy.py",
@@ -2160,8 +3190,13 @@
     },
     {
       "path": "app/tests/test_companion.py",
-      "bytes": 25470,
-      "sha256": "761de7ff05c0f9305f2c88c98c89b5c2dcef86fc63efd40ae41597b46d5df5d5"
+      "bytes": 30182,
+      "sha256": "dbe29d86ab3162084ed99748e99fdf74f0a01bd9a4864543edd86ccfd9e34dc8"
+    },
+    {
+      "path": "app/tests/test_extra_activities.py",
+      "bytes": 5366,
+      "sha256": "8106895853ff087782c247fb80b3f4d6b1c6168bd00706694f7eddfa03faf664"
     },
     {
       "path": "app/tests/test_food_swim.py",
@@ -2169,9 +3204,29 @@
       "sha256": "96b3c76ee7555d1f8873f552a624323a5a5bdcf3d6b97a8eb4320396884d13ac"
     },
     {
+      "path": "app/tests/test_runtime_environment.py",
+      "bytes": 2760,
+      "sha256": "8e59eb4a5f900fa71aadd4f8fbb15fb0d482c8e5080b0ad2e9dfa55ce22f4339"
+    },
+    {
       "path": "app/tests/test_tail_allow.py",
       "bytes": 6581,
       "sha256": "40d37d471cdd7e544b295a4609ca4699b1da790b6b8c9f1242e131f425d995a3"
+    },
+    {
+      "path": "app/tests/test_tts.py",
+      "bytes": 19861,
+      "sha256": "1457f5b85bdbc9e0e6abda6214c811dbf731aca4a88e44599b393e7201af5bf0"
+    },
+    {
+      "path": "app/tests/test_voice_audio.py",
+      "bytes": 4620,
+      "sha256": "86cc4a6322345194343de4a187a13522bce74257fc849f823eddf91d75692803"
+    },
+    {
+      "path": "app/tests/test_voice_delivery.py",
+      "bytes": 4570,
+      "sha256": "05561d595c32a86751bbe448d36174b2ee041f5a237cce90514a5ddfb977fe55"
     },
     {
       "path": "app/tests/test_walk.py",
@@ -2179,14 +3234,34 @@
       "sha256": "147aa86fe64319af3c609615258a47771af50e1a2515fe8b46814618e8934a16"
     },
     {
+      "path": "app/voice_archive.py",
+      "bytes": 2284,
+      "sha256": "2310a063f014b190064c06a7b03532bb7b1be90a721ed7b8b261224eba05cd8d"
+    },
+    {
+      "path": "app/voice_audio.py",
+      "bytes": 4395,
+      "sha256": "3fae3a4a0dadd9a5e63a3a14dd7abbea31f0081aae089d4faff831593f004f29"
+    },
+    {
+      "path": "app/voice_delivery.py",
+      "bytes": 5957,
+      "sha256": "ff974df8b64c368ecfd264305ffb4f2e2fcc1a98e9ae1500463bd36ea87c7eb2"
+    },
+    {
       "path": "app/whale_pet.py",
-      "bytes": 111566,
-      "sha256": "ee4369b1725f576498de7b483f9d199af5a6429d2d3bcca5703bd2e27ab221fb"
+      "bytes": 114123,
+      "sha256": "d3b366de50b4bc27f8e2a079eb197c7267a1db25d12f20ccb27dadf4e32b002b"
     },
     {
       "path": "docs/DSH使用说明.md",
       "bytes": 2332,
       "sha256": "ab853c2aa9c18e4690ec40c9d5fe4301d401ab64636c8b8021139cc56deb80d9"
+    },
+    {
+      "path": "docs/TTS使用说明.md",
+      "bytes": 7463,
+      "sha256": "8e73c453be231fd331b409b4eb84fee966424715b0fd1d43ad647b93e85ac1ba"
     },
     {
       "path": "docs/previews/tail-allow.png",
@@ -2205,8 +3280,8 @@
     },
     {
       "path": "docs/动画状态说明.md",
-      "bytes": 12002,
-      "sha256": "c98106962a2721591578c6cbca58a1bef90064f37da82658cee5e26dc1142647"
+      "bytes": 13436,
+      "sha256": "c54fd3084d6329f29cd1cd61cf4db6c350467995afb3beb352c08756acd51b26"
     },
     {
       "path": "docs/对话与记忆说明.md",
@@ -2214,14 +3289,19 @@
       "sha256": "f3194e0aaae4ea64e9fd932068ddc83b29124ea13106a3dbab4dded666bcba1e"
     },
     {
+      "path": "scripts/configure_fish_tts.py",
+      "bytes": 5506,
+      "sha256": "0ad005b02b4311420dee740a30debadb38ccfc999470793a8c65b541a4f40265"
+    },
+    {
       "path": "scripts/install_dsh_bridge.py",
-      "bytes": 2155,
-      "sha256": "87b3b90412c091911a69ac42ae0696891c62c0fd4eefda10f2857df8cf592fe9"
+      "bytes": 2191,
+      "sha256": "52ce30c68517e514dd67a695a37399debb2da47b150601ec157bdb16fc396479"
     },
     {
       "path": "scripts/package_github.py",
-      "bytes": 21505,
-      "sha256": "4270fc7276f8e5af0c91255366cb4e99c6afefbbf3fc385848ef928c510c0d1d"
+      "bytes": 24923,
+      "sha256": "7eaa71b901edb3f82856ace785f07fdea5e8fbbd9c80bcc96f2a3d70336d3169"
     },
     {
       "path": "启动DSH桌宠.bat",

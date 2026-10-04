@@ -21,6 +21,7 @@ class ReplyBubble(QDialog):
         layout = QVBoxLayout(self); layout.setContentsMargins(0,0,0,0); layout.addWidget(self.label)
         self.setFixedWidth(340)
         self.deadline = 0
+        self.held_for_reply = False
         self.timer = QTimer(self, timeout=self.tick)
         self.timer.setInterval(200)
 
@@ -45,9 +46,17 @@ class ReplyBubble(QDialog):
         pet = self.companion.pet
         if not pet.isVisible() or not pet.bubbles_on:
             self.hide(); self.timer.stop(); return
+        now = time.monotonic()
+        voice = getattr(self.companion, 'voice', None)
+        if (voice is not None and voice.is_active) or getattr(self.companion, 'chatting', False):
+            self.deadline = now + 3
+            self.held_for_reply = True
+        elif self.held_for_reply:
+            self.deadline = now + 3
+            self.held_for_reply = False
         if self.underMouse():
-            self.deadline = max(self.deadline,time.monotonic()+2)
-        if time.monotonic() > self.deadline:
+            self.deadline = max(self.deadline, now + 2)
+        if now > self.deadline:
             self.hide(); self.timer.stop()
         else:
             self.anchor()

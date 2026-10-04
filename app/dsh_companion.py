@@ -8,6 +8,8 @@ from urllib.parse import urlsplit, urlencode
 import uuid
 from companion_memory import CompanionMemory, clean
 from companion_bubble import ReplyBubble
+from companion_tts import FishSpeech
+from voice_delivery import PRESETS, speech_emotion
 from swim_behavior import SWIM_STATES
 from conversation_reactions import REACTIONS, keyword_reaction, is_neutral_chat
 from animation_policy import BalancedChooser, WORK_POOLS, SUCCESS_RULES, ERROR_RULES, WORK_ROTATION_GAP, tool_activity, is_service_busy
@@ -218,7 +220,8 @@ class BridgeClient(QObject):
                     chat_error = clean(frame.get('error') or '聊天回复中断，请再试一次。',300)
                 elif (generation==self.generation and frame.get('type')=='reply'
                       and frame.get('turnId')==data.get('turnId') and isinstance(frame.get('reply'),str)):
-                    self.chat_partial.emit({'turnId':frame['turnId'],'reply':clean(frame['reply'],300)})
+                    self.chat_partial.emit({'turnId':frame['turnId'],'reply':clean(frame['reply'],300),
+                                            'speechSafe':frame.get('speechSafe') is True})
         if streaming: reply.readyRead.connect(read_chat)
         def finished():
             if streaming:
@@ -433,6 +436,7 @@ class CommandWindow(QDialog):
         menu.addSeparator()
         menu.addAction('蓝色大肥鱼 · ' + (STATE_LABELS.get(comp.activity.state,'已连接') if comp.connected else '等待连接' if comp.mode=='dsh' else '独立陪伴')).setEnabled(False)
         comp.add_connection_menu(menu)
+        comp.add_voice_menu(menu)
         modes = menu.addMenu('陪伴方式')
         for mode,label in (('standalone','独立陪伴'),('dsh','跟随 dsh')):
             action=modes.addAction(label); action.setCheckable(True); action.setChecked(comp.mode==mode)
@@ -508,6 +512,8 @@ class PetCompanion(QObject):
         self.session_id = self.profile_sessions.get(self.dsh_profile, '')
         self.auto_follow = saved.get('dsh_auto_follow', True)
         self.memory = CompanionMemory(data_dir)
+        self.voice = FishSpeech(data_dir, self)
+        self.voice.problem.connect(self.voice_problem)
         self.last_persona_reply = ''
         self.last_task_reply = ''
         self.reply_bubble = None
@@ -552,7 +558,7 @@ class PetCompanion(QObject):
         self.client.task_status.connect(self.task_status_received)
         self.client.chat_partial.connect(self.chat_partial_received)
         self.client.connection.connect(self.connection_changed)
-        self.client.problem.connect(self.report)
+        self.client.problem.connect(lambda message: self.report(message, speak=False))
         self.finished_timer = QTimer(self, singleShot=True, timeout=self.finish_animation)
         self.celebration_timer = QTimer(self, singleShot=True, timeout=self.celebrate)
         self.report_timer = QTimer(self, singleShot=True, timeout=self.task_report)
@@ -577,6 +583,20 @@ class PetCompanion(QObject):
         for profile, label in (('web','网页版'), ('desktop','桌面版')):
             action = sources.addAction(label); action.setCheckable(True); action.setChecked(self.dsh_profile == profile)
             action.triggered.connect(lambda _=False, selected=profile: self.set_dsh_profile(selected))
+
+    def add_voice_menu(self, menu):
+        self.voice.add_menu(menu, lambda: self.voice.speak(self.last_persona_reply),self.set_persona_preset)
+
+    def set_persona_preset(self, name):
+        if name not in PRESETS or name == self.voice.selected_preset(): return
+        self.stop_chat()
+        self.voice.set_preset(name)
+
+    def voice_problem(self, message):
+        # Keep the answer bubble intact; audio status belongs in the menu/tooltip.
+        if self.window:
+            self.window.last_feedback = message
+            self.window.update_tooltip()
 
     def set_dsh_profile(self, profile):
         if profile not in ('web','desktop') or profile == self.dsh_profile: return
@@ -712,17 +732,22 @@ class PetCompanion(QObject):
         self.reply_bubble.show_reply(self.last_persona_reply)
         self.pet.update()
 
-    def report(self, message):
+    def report(self, message, speak=True):
         if self.window: self.window.append('蓝色大肥鱼', clean(message,400))
         else: self.show_reply(message)
+        if speak and message: self.voice.speak(clean(message.split('\n',1)[0],300))
 
     def chat_partial_received(self, value):
         if not self.chatting or value.get('turnId')!=self.chat_turn_id: return
-        if isinstance(value.get('reply'),str): self.show_reply(clean(value['reply'],300))
+        if isinstance(value.get('reply'),str):
+            text = clean(value['reply'],300)
+            self.show_reply(text)
+            if value.get('speechSafe') is True: self.voice.update(self.chat_turn_id, text)
 
     def stop_chat(self):
         self.chat_epoch += 1; self.chatting = False
         self.chat_turn_id = ''
+        self.voice.stop()
         self.stop_emotion()
         self.pending_reaction = None; self.reaction_timer.stop()
         reply,self.chat_reply = self.chat_reply,None
@@ -774,11 +799,12 @@ class PetCompanion(QObject):
     def send(self, text, mode='queue'):
         text = text.strip()
         if self.sending or self.creating or self.chatting:
-            self.report('我还在处理上一句话呢，稍等一下。')
+            self.report('我还在处理上一句话呢，稍等一下。', speak=False)
             return
+        self.voice.stop()
         if len(text) > 32000:
             self.report('指令过长，请拆成几条发送。'); return
-        if text.lstrip('/') in ('喂饭','投喂','睡觉','醒醒','安静','活泼','隐藏','散步','写代码','摸尾巴','摸头','开心','dsh','连接dsh'):
+        if text.lstrip('/') in ('喂饭','投喂','睡觉','醒醒','安静','活泼','隐藏','散步','写代码','摸尾巴','摸头','开心','竹蜻蜓','飞行','扫地','吹泡泡','dsh','连接dsh'):
             self.local_command(text)
             self.clear_input(text)
             return
@@ -822,21 +848,26 @@ class PetCompanion(QObject):
         turn_started = time.monotonic()
         touched_at = self.interaction_stamp()
         body={**self.memory.context(text), 'text':text,'turnId':str(uuid.uuid4()),'sessionId':identity,
-              'mode':self.mode,'project':self.project,'event':event,'reason':reason,'stream':True}
+              'mode':self.mode,'project':self.project,'event':event,'reason':reason,'stream':True,
+              'personaPreset':self.voice.selected_preset()}
         self.chat_turn_id=body['turnId']
+        self.voice.begin(self.chat_turn_id, emotion=speech_emotion(text,input_emotion,body['personaPreset'],event))
         def done(value):
             if epoch != self.chat_epoch or identity != self.session_id: return
             self.chatting=False; self.chat_reply=None; self.chat_turn_id=''
             reply=clean(value.get('reply',''),300)
             action=value.get('action','chat') if not only_chat and event=='user' else 'chat'
             if action in ('task','steer','new_task'):
+                self.voice.stop()
                 self.stop_emotion(); self.pending_reaction = None; self.reaction_timer.stop()
                 self.send_task(user_text,'steer' if action=='steer' and self.busy else delivery,original=user_text,new=action=='new_task')
             elif action=='cancel':
+                self.voice.stop()
                 self.stop_emotion(); self.pending_reaction = None; self.reaction_timer.stop()
                 self.cancel(); self.clear_input(user_text)
             else:
-                self.report(reply)
+                self.voice.finish(body['turnId'], reply)
+                self.report(reply, speak=False)
                 if event=='user':
                     self.memory.add_turn(user_text,reply); self.clear_input(user_text)
                 else:
@@ -844,7 +875,8 @@ class PetCompanion(QObject):
         def failed(message):
             if epoch != self.chat_epoch: return
             self.chatting=False; self.chat_reply=None; self.chat_turn_id=''
-            if event=='user': self.report(message + ' 这句话还留在输入框里。')
+            self.voice.stop()
+            if event=='user': self.report(message + ' 这句话还留在输入框里。', speak=False)
             elif self.mode=='dsh' and identity==self.session_id:
                 fallback={'waiting':'主人，工作在等你确认或回答问题，请去 dsh 看一眼。',
                     'success':'这轮工作结束啦，具体结果在 dsh；要我帮你看看重点也可以哦。',
@@ -921,6 +953,10 @@ class PetCompanion(QObject):
                     '游泳':lambda: self.pet.do_action('swim',0),
                     '停止游泳':lambda:self.pet._begin_swim_return() if self.pet.state in SWIM_STATES else None,
                     '写代码':lambda: self.pet.do_action('ds_code_eureka', 0),
+                    '竹蜻蜓':lambda:self.pet.do_action('ds_bamboo_copter',0),
+                    '飞行':lambda:self.pet.do_action('ds_bamboo_copter',0),
+                    '扫地':lambda:self.pet.do_action('ds_sweep',0),
+                    '吹泡泡':lambda:self.pet.do_action('ds_bubble_pop',0),
                     '摸尾巴':lambda: self.pet.interact('tail'), '摸头':lambda: self.pet.do_action('petted', 2), '开心':lambda: self.pet.do_action('happy', 0)}
         command = text.strip().lstrip('/')
         if command in commands:

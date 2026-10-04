@@ -28,6 +28,8 @@ screen (occasionally trips). Tsundere interactions (all tunable in the configura
 """
 import json, os, random, sys, time, math, hashlib
 from datetime import datetime
+from runtime_environment import prepare_runtime
+prepare_runtime()
 
 from PySide6.QtCore import Qt, QTimer, QPoint, QPointF, QRect, QRectF, QElapsedTimer
 from PySide6.QtGui import (QPixmap, QPainter, QAction, QCursor, QGuiApplication, QIcon, QImage, QFont,
@@ -36,6 +38,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QMenu, QSystemTrayIcon, QMe
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from pet_support import FrameCache, LazyFrames, PngFrames, Preferences, configure_fonts
 from animation_policy import IDLE_RULES, BalancedChooser, IDLE_GAP, WALK_GAP, FIRST_IDLE_GAP
+from extra_activities import ACTIVITY_STATES, activity_sequences
 from swim_behavior import SwimBehavior, SWIM_STATES, SWIM_RENDER_SCALE
 
 
@@ -182,10 +185,13 @@ SPEAK_AT.update({'ds_code_eureka':'frame', 'dsh_success':'frame', 'ds_tail_allow
 SPEECH.update({'ds_tail_allow':['只、只能摸一下哦'], 'ds_tail_allow_touched':['呜…就、就一下！'],
                'ds_tail_allow_timeout':['哼，不摸拉倒']})
 ACTIONS.append(('写代码 → 灵光一闪', 'ds_code_eureka', 0))
+STATE_ANIM.update({name:name for name in ACTIVITY_STATES})
+ONESHOT_STATES += ACTIVITY_STATES
+ACTIONS += [('竹蜻蜓飞行','ds_bamboo_copter',0),('扫地','ds_sweep',0),('吹泡泡','ds_bubble_pop',0)]
 
 
 class Anim:
-    def __init__(self, name, frames, fps, loop, root_motion=None, section=None, flips=None, speak_frame=None, canvas=None):
+    def __init__(self, name, frames, fps, loop, root_motion=None, section=None, flips=None, speak_frame=None, canvas=None, offset=None):
         self.name, self.frames, self.fps, self.loop = name, frames, fps, loop
         self.speak_frame = speak_frame                  # SPEAK_AT 'frame': the bubble appears at this frame
         self.flips = flips or [False] * len(frames)     # frame drawn mirrored (flip_x alias)
@@ -194,6 +200,7 @@ class Anim:
         # [a, b): frames that repeat while the state is held (entry frames before, exit-to-idle frames after)
         self.section = tuple(section) if section else None
         self.canvas=tuple(canvas) if canvas else None
+        self.offset=tuple(offset or (0,0))
 
     def __len__(self):
         return len(self.frames)
@@ -263,6 +270,21 @@ class Sprites:
             if missing:raise RuntimeError('Missing '+name+' animation frames: '+', '.join(missing))
             self.anims[name]=Anim(name,PngFrames(self.cache,paths),metadata['fps'],metadata['loop'],
                 section=metadata.get('loop_section'),speak_frame=metadata.get('speak_frame'),canvas=metadata['canvas'])
+        with open(os.path.join(folder,'extra','activities.json'),encoding='utf-8') as source:
+            activities=json.load(source)['animations']
+        for name,metadata in activities.items():
+            paths=[os.path.join(folder,'extra',metadata['folder'],f'{i:02d}.png') for i in range(metadata['frames'])]
+            if any(not os.path.isfile(path) for path in paths):raise RuntimeError('Missing activity frames: '+name)
+            self.anims[name]=Anim(name,PngFrames(self.cache,paths),metadata['fps'],metadata['loop'],
+                canvas=metadata['canvas'],offset=metadata['offset'])
+        for name,sequence in activity_sequences().items():
+            paths=[];motion=[]
+            for clip,first,last,step in sequence:
+                metadata=activities[clip]
+                paths.extend(os.path.join(folder,'extra',metadata['folder'],f'{i:02d}.png') for i in range(first,last))
+                motion.extend([step]*(last-first))
+            self.anims[name]=Anim(name,PngFrames(self.cache,paths),10,False,
+                root_motion=motion if any(motion) else None,canvas=metadata['canvas'],offset=metadata['offset'])
         for alias,source_name in (('dsh_waiting','tsun_peek'),('dsh_busy','ds_server_busy')):
             source = self.anims[source_name]
             first,last = source.section
@@ -385,7 +407,7 @@ class Pet(SwimBehavior,QWidget):
         self.display_scale=self.scale
         if anim and anim.name.startswith('ds_swim_full'):
             self.display_scale*=SWIM_RENDER_SCALE
-        if canvas!=(self.sp.cell,self.sp.cell):
+        if canvas!=(self.sp.cell,self.sp.cell) and getattr(anim,'offset',(0,0))==(0,0):
             r=self._screen_rect()
             self.display_scale=min(self.display_scale,r.width()/canvas[0],r.height()/canvas[1])
         self.setFixedSize(*(max(1,int(round(side*self.display_scale))) for side in canvas))
@@ -401,7 +423,8 @@ class Pet(SwimBehavior,QWidget):
     def _ground_y(self):
         """window y at which the feet touch the bottom of the work area"""
         r = self._screen_rect()
-        return r.bottom() + 1 - int(round(self.sp.baseline * self.scale))
+        offset=getattr(self.anim,'offset',(0,0))[1]
+        return r.bottom() + 1 - int(round((self.sp.baseline+offset) * self.display_scale))
 
     def _place_on_ground(self, center=False):
         r = self._screen_rect()
@@ -417,7 +440,7 @@ class Pet(SwimBehavior,QWidget):
             y=max(r.top(),min(self.y(),max(r.top(),r.bottom()+1-self.height())))
             self.swim_x=float(x);self.swim_y=float(y)
         else:
-            y = r.bottom() + 1 - int(round(self.sp.baseline * self.scale)) if ground else max(r.top(), min(self.y(), self._ground_y()))
+            y = self._ground_y() if ground else max(r.top(), min(self.y(), self._ground_y()))
         self.move(x, y)
 
     def _watch_screen(self, screen):
@@ -540,6 +563,9 @@ class Pet(SwimBehavior,QWidget):
     def set_state(self, state, anim=None, length=0.0, keep_queue=False, origin=None):
         previous=self.state
         center_x=self.x()+self.width()/2
+        old_offset=getattr(self.anim,'offset',(0,0))
+        normal_x=self.x()+round(old_offset[0]*self.display_scale)
+        normal_y=self.y()+round(old_offset[1]*self.display_scale)
         if origin is not None:
             self.animation_origin = origin
         elif state == 'idle':
@@ -553,6 +579,10 @@ class Pet(SwimBehavior,QWidget):
         self.state = state
         self.anim = self.sp[anim or STATE_ANIM[state]]
         self._resize()
+        if old_offset!=(0,0) or self.anim.offset!=(0,0):
+            self.move(normal_x-round(self.anim.offset[0]*self.display_scale),
+                      normal_y-round(self.anim.offset[1]*self.display_scale))
+            self._clamp_position(ground=previous not in ('dangle','fall'))
         if previous in SWIM_STATES and state not in SWIM_STATES:
             self.move(round(center_x-self.width()/2),self._ground_y())
             self._clamp_position()
@@ -674,6 +704,9 @@ class Pet(SwimBehavior,QWidget):
             self._start_walk()
         elif st == 'swim':
             self.start_swim(duration=length)
+        elif st == 'ds_bamboo_copter':
+            self.walk_dir=1
+            self.set_state(st)
         elif st == 'ds_tail_touch':
             self.start_tail_touch()
         elif st == 'ds_not_fat':
@@ -1071,6 +1104,9 @@ class Pet(SwimBehavior,QWidget):
         return self.sp[name].frames[i]
 
     def reply_anchor_rect(self):
+        if self.anim.offset!=(0,0):
+            ox,oy=self.anim.offset;s=self.display_scale
+            return QRect(self.x()+round(ox*s),self.y()+round(oy*s),round(256*s),round(256*s))
         if self.state not in SWIM_STATES:return self.geometry()
         key=self._frame_key()
         if key not in self._swim_bounds:
@@ -1141,7 +1177,8 @@ class Pet(SwimBehavior,QWidget):
                 return
             self.press_pos = e.globalPosition().toPoint()
             lp = e.position()
-            self.press_cell = (lp.x() / self.scale, lp.y() / self.scale)
+            ox,oy=self.anim.offset
+            self.press_cell = (lp.x() / self.display_scale-ox, lp.y() / self.display_scale-oy)
             self.press_t = time.monotonic()
             self.press_consumed = False
             self.dragging = False
@@ -1295,6 +1332,7 @@ class Pet(SwimBehavior,QWidget):
         if self._assistant is not None:
             m.addAction('输入指令…').triggered.connect(self._assistant.open_window)
             self._assistant.add_connection_menu(m)
+            self._assistant.add_voice_menu(m)
             modes = m.addMenu('运行模式')
             for key, label in (('standalone', '独立陪伴'), ('dsh', '跟随 dsh')):
                 action = modes.addAction(label); action.setCheckable(True); action.setChecked(self._assistant.mode == key)
@@ -1413,10 +1451,12 @@ class Pet(SwimBehavior,QWidget):
             center=self.geometry().center();self.scale=s;self._resize()
             self.move(center.x()-self.width()//2,center.y()-self.height()//2)
             self._clamp_position(ground=False);self._paint_key=None;self.update();self.schedule_save();return
-        cx, bottom = self.x() + self.width() // 2, self.y() + int(self.sp.baseline * self.scale)
+        ox,oy=self.anim.offset
+        cx=self.x()+round((128+ox)*self.display_scale)
+        bottom=self.y()+round((self.sp.baseline+oy)*self.display_scale)
         self.scale = s
         self._resize()
-        self.move(cx - self.width() // 2, bottom - int(self.sp.baseline * s))
+        self.move(cx-round((128+ox)*self.display_scale),bottom-round((self.sp.baseline+oy)*self.display_scale))
         if self.state not in ('dangle', 'fall'):
             self._clamp_position()
         self._paint_key = None

@@ -1,0 +1,95 @@
+{
+  "set": "ds_sweep",
+  "fps": 10,
+  "frame_ms": 100,
+  "canvas": [
+    288,
+    272
+  ],
+  "canvas_256_offset": {
+    "x": 16,
+    "y": 0,
+    "meaning": "point (x, y) of the normal 256x256 canvas = (16+x, 0+y) here; draw this frame at (pet_x - 16, pet_y - 0) where (pet_x, pet_y) is the top-left of the normal 256 frame -> no position jump"
+  },
+  "baseline_y": 244,
+  "center_x": 144,
+  "frame_files": "frames/<anim>/NN.png (RGBA 288x272, transparent)",
+  "strips": "spritesheets/<anim>.png (frame i at x = 288*i)",
+  "animations": {
+    "ds_sweep_start": {
+      "frames": 4,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 0.4,
+      "segments": {
+        "ready": [
+          0,
+          1
+        ],
+        "broom_out": [
+          2,
+          3
+        ]
+      },
+      "notes": "start (one-shot, 4 frames): idle -> pop cut to the broom (1); then play ds_sweep_loop from frame 2"
+    },
+    "ds_sweep_loop": {
+      "frames": 16,
+      "loop": true,
+      "loop_section": [
+        0,
+        16
+      ],
+      "duration_s": 1.6,
+      "segments": {
+        "set_down_1": [
+          0,
+          3
+        ],
+        "stroke_2": [
+          4,
+          7
+        ],
+        "follow_through_step_3": [
+          8,
+          11
+        ],
+        "swing_back_hum_4": [
+          12,
+          15
+        ]
+      },
+      "notes": "sweep loop 0-15: 1 broom set down right (scuff) -> 2 stroke left + dust puff -> 3 follow-through + 2 px step + dust -> 4 swing back, humming note; squash pop on every cut"
+    },
+    "ds_sweep_end": {
+      "frames": 18,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 1.8,
+      "segments": {
+        "pop_in_pile": [
+          0,
+          2
+        ],
+        "phew": [
+          3,
+          17
+        ]
+      },
+      "notes": "ending (one-shot, play after loop frame 15): pop cut to 5 (leaning on the broom, wiping the forehead), the dust pile pops up beside her, phew hold; ends on 5 (the app returns to idle with its usual hard cut)"
+    }
+  },
+  "gifs": {
+    "ds_sweep": {
+      "path": "previews/ds_sweep.gif",
+      "frames": 68,
+      "shows": "start 0-3 -> loop 2-15, 0-15, 0-15 -> end 0-17"
+    },
+    "ds_sweep_loop": {
+      "path": "previews/ds_sweep_loop.gif",
+      "frames": 16,
+      "shows": "the loop 0-15"
+    }
+  },
+  "sequence_sheet": "previews/ds_sweep_sheet.png"
+}

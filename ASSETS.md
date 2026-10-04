@@ -6,6 +6,7 @@
 - `app/assets/extra/ds_code_eureka`：`whale-pet-frames-code-eureka.zip` 中的无主气泡版本，76 帧。
 - `app/assets/extra/ds_tail_allow`：`whale-pet-frames-tail-allow.zip` 中的无文字版本，60 帧；`source.json` 记录原始 ZIP 和各 PNG 的 SHA-256。
 - `app/assets/extra/additions.json`：吃饱揉肚子及游泳，共 257 张原始透明 PNG（小尺寸帧仅存档）；完整尺寸的左右向由 swim-full 两个素材卷合并，保留 10 fps、转向、点击跃出和逐帧 SHA-256。
+- `app/assets/extra/activities.json`：竹蜻蜓、扫地、吹泡泡三套新增素材，共 197 张原始 RGBA PNG；记录三个 ZIP 与逐帧 SHA-256、10 fps、画布和对齐偏移。竹蜻蜓与扫地按源包推荐片段组合成有限时完整动作。
 - 对话气泡由程序实时绘制，可关闭。摸尾巴的确认和超时片段独立，不会串播。
 - `docs/previews/tail-allow.png`：应用实际渲染的分支预览。
 

@@ -16,7 +16,7 @@ if errorlevel 1 python -m venv .venv
 if errorlevel 1 goto environment_error
 
 :check_dependencies
-".venv\Scripts\python.exe" -c "import PySide6.QtWidgets, PySide6.QtNetwork" >nul 2>&1
+".venv\Scripts\python.exe" -c "import PySide6.QtWidgets, PySide6.QtNetwork, PySide6.QtWebSockets, PySide6.QtMultimedia, msgpack, numpy" >nul 2>&1
 if not errorlevel 1 goto launch
 echo Installing desktop pet dependencies. Please wait...
 ".venv\Scripts\python.exe" -m pip install -r requirements.txt

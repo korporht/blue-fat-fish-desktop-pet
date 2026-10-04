@@ -1,0 +1,69 @@
+{
+  "set": "ds_bubble_pop",
+  "fps": 10,
+  "frame_ms": 100,
+  "canvas": [
+    384,
+    496
+  ],
+  "canvas_256_offset": {
+    "x": 64,
+    "y": 240,
+    "meaning": "point (x, y) of the normal 256x256 canvas = (64+x, 240+y) here; draw this frame at (pet_x - 64, pet_y - 240) where (pet_x, pet_y) is the top-left of the normal 256 frame -> no position jump"
+  },
+  "baseline_y": 484,
+  "center_x": 192,
+  "frame_files": "frames/<anim>/NN.png (RGBA 384x496, transparent)",
+  "strips": "spritesheets/<anim>.png (frame i at x = 384*i)",
+  "animations": {
+    "ds_bubble_pop": {
+      "frames": 70,
+      "loop": false,
+      "loop_section": null,
+      "duration_s": 7.0,
+      "segments": {
+        "blow": [
+          0,
+          11
+        ],
+        "grow": [
+          12,
+          19
+        ],
+        "float": [
+          20,
+          31
+        ],
+        "burst": [
+          32,
+          36
+        ],
+        "land": [
+          37,
+          39
+        ],
+        "foam": [
+          40,
+          51
+        ],
+        "pout": [
+          52,
+          65
+        ],
+        "end": [
+          66,
+          69
+        ]
+      },
+      "notes": "FRAMES ONLY (not in the app atlas). blow a bubble (1) -> it grows bigger than her (2) and lifts her -> floating, kicking, scared (3) -> burst at the top (4, splash) -> drop + land covered in foam (5) -> pout, shake the foam off (6) -> idle. Enlarged canvas 384x496, 256 canvas at offset (64, 240)."
+    }
+  },
+  "gifs": {
+    "ds_bubble_pop": {
+      "path": "previews/ds_bubble_pop.gif",
+      "frames": 70,
+      "shows": "the whole one-shot 0-69"
+    }
+  },
+  "sequence_sheet": "previews/ds_bubble_pop_sheet.png"
+}

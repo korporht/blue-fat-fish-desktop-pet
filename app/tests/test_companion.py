@@ -67,6 +67,91 @@ class CompanionTests(unittest.TestCase):
     def last_call(self, route):
         return next(call for call in reversed(self.calls) if call[0] == route)
 
+    def test_reply_bubble_waits_for_audio_drain_then_leaves_reading_time(self):
+        from unittest.mock import patch
+        self.comp.show_reply('主人，我在呢。')
+        bubble=self.comp.reply_bubble
+        voice=self.comp.voice
+        with patch('companion_bubble.time.monotonic') as now, patch.object(bubble,'underMouse',return_value=False):
+            now.return_value=100
+            self.comp.show_reply('主人，我在呢。')
+            voice.socket=object()  # Waiting for audio also keeps the reply visible.
+            now.return_value=150; bubble.tick()
+            self.assertTrue(bubble.isVisible())
+            voice.socket=None
+            voice.player.sink=object()  # Transport finished, device still playing.
+            now.return_value=200; bubble.tick()
+            self.assertTrue(bubble.isVisible())
+            voice.player.sink=None
+            now.return_value=201; bubble.tick()
+            self.assertTrue(bubble.isVisible())
+            now.return_value=205; bubble.tick()
+            self.assertFalse(bubble.isVisible())
+
+    def test_reply_bubble_without_speech_still_expires(self):
+        from unittest.mock import patch
+        self.comp.show_reply('晚安。')
+        bubble=self.comp.reply_bubble
+        with patch('companion_bubble.time.monotonic') as now, patch.object(bubble,'underMouse',return_value=False):
+            now.return_value=100; self.comp.show_reply('晚安。')
+            now.return_value=117; bubble.tick()
+            self.assertFalse(bubble.isVisible())
+
+    def test_voice_streams_only_approved_increment_and_final_reply_never_replays(self):
+        from unittest.mock import patch
+        with patch.object(self.comp.voice,'begin') as begin, patch.object(self.comp.voice,'update') as update, \
+             patch.object(self.comp.voice,'finish') as finish, patch.object(self.comp.voice,'speak') as speak:
+            self.comp.send('你好')
+            turn=self.last_call('/chat')[1]['turnId']
+            begin.assert_called_once_with(turn,emotion='greeting')
+            self.comp.chat_partial_received({'turnId':turn,'reply':'主人，','speechSafe':False})
+            update.assert_not_called()
+            self.comp.chat_partial_received({'turnId':turn,'reply':'主人，我在呢。','speechSafe':True})
+            update.assert_called_once_with(turn,'主人，我在呢。')
+            self.last_call('/chat')[2]({'action':'chat','reply':'主人，我在呢。'})
+            finish.assert_called_once_with(turn,'主人，我在呢。');speak.assert_not_called()
+            self.assertEqual(self.comp.reply_bubble.label.text(),'主人，我在呢。')
+
+    def test_voice_failure_does_not_replace_answer_or_change_selected_task(self):
+        self.comp.show_reply('主人，我陪着你。')
+        self.comp.voice_problem('语音暂不可用')
+        self.assertEqual(self.comp.last_persona_reply,'主人，我陪着你。')
+        self.assertEqual(self.comp.reply_bubble.label.text(),'主人，我陪着你。')
+        self.assertEqual(self.comp.session_id,'real')
+
+    def test_selected_voice_preset_reaches_chat_context_even_with_voice_disabled(self):
+        self.comp.voice.set_preset('brat')
+        self.comp.voice.set_enabled(False)
+        self.comp.send('你好')
+        body=self.last_call('/chat')[1]
+        self.assertEqual(body['personaPreset'],'brat')
+        self.assertEqual(body['sessionId'],'real')
+        self.last_call('/chat')[2]({'action':'chat','reply':'噗，主人来啦～'})
+        self.comp.voice.set_preset('maid')
+        self.comp.send('早安')
+        self.assertEqual(self.last_call('/chat')[1]['personaPreset'],'maid')
+
+    def test_persona_switch_discards_old_prompt_reply_without_clearing_memory_or_task(self):
+        self.comp.send('你好')
+        old=self.last_call('/chat')[2]
+        self.assertTrue(self.comp.chatting)
+        self.comp.memory.remember('爱好=鲷鱼烧')
+        self.comp.set_persona_preset('brat')
+        self.assertFalse(self.comp.chatting)
+        old({'action':'chat','reply':'旧性格迟到的回复'})
+        self.assertNotEqual(self.comp.last_persona_reply,'旧性格迟到的回复')
+        self.assertEqual(self.comp.session_id,'real')
+        self.assertEqual(self.comp.memory.data['facts'][0]['text'],'鲷鱼烧')
+        self.assertFalse(self.comp.memory.data['recent'])
+        self.comp.send('你好')
+        self.assertEqual(self.last_call('/chat')[1]['personaPreset'],'brat')
+
+    def test_session_switch_stops_pending_or_playing_voice(self):
+        from unittest.mock import patch
+        with patch.object(self.comp.voice,'stop') as stop:
+            self.comp.select('another')
+            self.assertTrue(stop.called)
+
     def test_profile_switch_isolates_sessions_and_discards_old_chat(self):
         self.comp.send('你好'); stale=self.last_call('/chat')[2]
         self.comp.set_dsh_profile('web')

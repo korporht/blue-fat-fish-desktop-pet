@@ -58,7 +58,7 @@ export async function createBridge(api, options = {}) {
     lifetime.signal.addEventListener('abort', stop, {once:true});
     try {
       if (request.method === 'GET' && url.pathname === '/health') {
-        return json(response, 200, {apiVersion:2, build:'2026.10.01-targeted-model', profile, name:'蓝色大肥鱼 dsh bridge', pid:process.pid,
+        return json(response, 200, {apiVersion:2, build:'2026.10.02-voice-presets', profile, name:'蓝色大肥鱼 dsh bridge', pid:process.pid,
           companionChat:!!options.llm, workspace:!!registry});
       }
       if (request.method === 'GET' && url.pathname === '/sessions') {
@@ -133,8 +133,8 @@ export async function createBridge(api, options = {}) {
               response.writeHead(200,{'content-type':'application/x-ndjson; charset=utf-8','cache-control':'no-store'});
               response.flushHeaders();
               response.write(JSON.stringify({type:'start',turnId:identity})+'\n');
-              const partial=reply=>{
-                if(!response.destroyed) response.write(JSON.stringify({type:'reply',turnId:identity,reply})+'\n');
+              const partial=(reply,speechSafe)=>{
+                if(!response.destroyed) response.write(JSON.stringify({type:'reply',turnId:identity,reply,speechSafe:speechSafe===true})+'\n');
               };
               const value=await chat.chat(body,cancellation.signal,partial);
               return response.end(JSON.stringify({type:'result',value})+'\n');

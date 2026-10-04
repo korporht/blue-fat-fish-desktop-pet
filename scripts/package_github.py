@@ -7,7 +7,7 @@ REPOSITORY=Path(__file__).resolve().parent.name=='scripts' and (BASE/'app/whale_
 ROOT=BASE if REPOSITORY else Path(__file__).resolve().parents[3]
 APP=ROOT/'app' if REPOSITORY else ROOT/'桌宠/whale-pet/app'
 TOOLS=ROOT/'scripts' if REPOSITORY else ROOT/'桌宠/whale-pet/tools'
-VERSION='2026.10.01'
+VERSION='2026.10.04'
 NAME='blue-fat-fish'
 # Leak check: reject any local absolute path instead of listing specific machines' paths.
 PERSONAL_PATH_PATTERNS=(
@@ -33,6 +33,7 @@ README=r'''# 蓝色大肥鱼桌宠 / Blue Fat Fish Desktop Pet
 Windows 安装 Python 3.11 或更新版本，并让 Python 可从命令行使用。解压完整目录后，双击 **启动桌宠.bat**；首次启动会自动创建环境并安装 PySide6，需要网络。
 
 - 单击摸头、双击开心；按住拖动，松开后落到屏幕底部。
+- 新增竹蜻蜓起飞、左右飞行和落地；扫地后擦汗收尾；吹泡泡、漂浮、破掉、甩泡沫。原始 10 fps 与画布偏移保持不变，日常轮播有冷却和公平补偿。右键「动作」或输入「竹蜻蜓 / 扫地 / 吹泡泡」可播放。
 - 吃满后接揉肚子动画；日常可在屏幕内游泳，点击跃出水面后继续游，游一会儿回到地面。游泳角色与平时同尺寸，在原站位略上方游动；右键「动作」可选屏幕游泳，「自由游泳」开关控制自动出游；新素材保持 10 fps。
 - 点尾巴或右键「互动 → 摸尾巴」：先甩尾巴，再转身允许摸一下。等待约 4 秒，点她进入被摸分支；没有点击则进入超时分支。两个分支独立播放。
 - 右键可以投喂、玩耍、改大小、切换安静陪伴、隐藏和退出。重复启动会召回已有实例。
@@ -40,6 +41,7 @@ Windows 安装 Python 3.11 或更新版本，并让 Python 可从命令行使用
 - 蓝色大肥鱼的日常回复显示在她身旁的可换行气泡里，字体 17 像素。她是呆萌、贴心、有点贪吃的鲸鱼女仆，偶尔撒娇、轻轻嘴硬；闲聊顺着话题回应，不催派活或索要项目。明确任务提交给 dsh，技术细节留在工作会话。可用 `/任务 ` 直接下指令、`/聊 ` 只聊天。
 - 对话会触发相应表情和动作：被逗时脸红轻哼，被夸时害羞或得意，打招呼会挥手，也可以邀请摸头、摸尾巴、跳舞、喝茶。关键词命中直接反应；未命中时单独分类，与聊天回复并行。普通聊天保持默认动作，保护已有互动并限制重复播放。
 - 日常聊天复用 dsh 配置的模型连接，独立调用并关闭思考，不创建 Harness 任务；AI 聊天需 dsh 正在运行，动画和本地互动可离线。
+- 可接入 Fish Audio 的复刻音色，模型固定 `s2.1-pro-free`。文字与音频双向流式传输，收到音频即播放；右键「语音」可以关闭、停止、重听和切换「呆萌女仆 / 雌小鬼」性格及语音预设。最近 100 条原始 WAV 与台词只保存在本机，超长生成自动停止。配置见 [语音说明](docs/TTS使用说明.md)。
 - `记住：称呼=主人` / `忘记：称呼` 管理明确保存的偏好，右键逐条查看或清除。详情见 [对话与记忆](docs/对话与记忆说明.md)。
 - 独立模式指令：喂饭、睡觉、醒醒、安静、活泼、隐藏、散步、游泳、停止游泳、写代码、摸尾巴、摸头、开心。跟随 dsh 时在这些指令前加 `/` 可直接控制本地动作。
 
@@ -60,11 +62,12 @@ macOS 可运行 `bash app/run_mac.command`；源码和素材通用，本次桌�
 - **分工**：日常聊天由蓝色大肥鱼单独快速回答（关闭思考），任务执行交给 dsh；详细分析、代码和工具输出留在 dsh 的工作会话。
 - **本机保存**：聊天记忆保存在本机 `app/userdata/companion-memory.json`。近期聊天保留 7 天；长期记忆只在你明确输入 `记住：…` 时写入，可逐条忘记，也可清除近期聊天或长期记忆。个人记忆、会话、设置和运行时连接凭据不进入仓库和发布包。
 - **发送给模型的内容**：聊天经 dsh 发给当前所跟随会话选中的模型（会话没有单独选择时用 dsh 默认模型）。明确的日常闲聊只带人设、当次输入、最近最多 6 条聊天（合计 1800 字）与 400 字旧摘录，以及相关长期记忆；涉及任务或之前事情的输入才使用完整上下文：最近 12 条聊天、少量旧摘录、相关长期记忆和裁剪后的任务摘要（状态、进展、回复），总输入最多 16000 字符。不发送系统 / 开发者提示、推理内容、工具参数、完整工具结果、文件正文、模型配置或凭据；常见凭据格式会先被隐藏。表情分类请求只看当次输入。
-- 模型请求由你在 dsh 中配置的服务商处理，适用该服务商的数据政策；本项目不包含任何 API 密钥。详情见 [对话与记忆说明](docs/对话与记忆说明.md)。
+- **语音（可选）**：开启 Fish Audio 朗读后，只把蓝色大肥鱼的自然回复文字增量发送到 Fish Audio，不发送你的输入、记忆、Harness 提示、任务日志或密钥文档。Fish 密钥和音色 ID 保存在本机 `app/userdata/fish-tts.json`；复刻音色时上传的参考音频由你自己指定。最近 100 条生成的语音 WAV 及台词保存在本机 `app/userdata/tts-audio/`，生成记录在 `app/userdata/tts-events.jsonl`；这些文件都不进入仓库和发布包。详情见 [语音说明](docs/TTS使用说明.md)。
+- 模型请求由你在 dsh 中配置的服务商处理，适用该服务商的数据政策；本项目不包含任何 API 密钥；Fish Audio 的数据处理同样适用其服务政策。详情见 [对话与记忆说明](docs/对话与记忆说明.md)。
 
 ## 开发与验证
 
-应用使用 Python 标准库和 PySide6；dsh 桥接使用 Node.js 内置模块，由 dsh 加载，无须额外 npm 安装。
+应用使用 Python、PySide6、NumPy 和 MessagePack；dsh 桥接使用 Node.js 内置模块，由 dsh 加载，无须额外 npm 安装。
 
 ```powershell
 py -3 -m venv .venv
@@ -82,7 +85,7 @@ py -3 -m venv .venv
 
 解压本包，把 `blue-fat-fish` 里面的文件作为仓库根目录上传，保留 `app/assets` 的全部文件。不要把外层 ZIP 当作源码目录；ZIP 可以放在 GitHub Release 供下载。
 
-仓库包含启动器、源码、完整三页图集、76 帧写代码动画、60 帧摸尾巴允许动画、新增 257 帧吃饱与游泳素材、测试与说明；不含 Python 环境、会话、个人设置、连接凭据、历史原始 ZIP 或临时验证文件。素材来源记录见 [ASSETS.md](ASSETS.md)。
+仓库包含启动器、源码、完整三页图集、76 帧写代码动画、60 帧摸尾巴允许动画、257 帧吃饱与游泳素材、197 帧竹蜻蜓/扫地/吹泡泡素材、测试与说明；不含 Python 环境、会话、个人设置、语音录音、连接凭据、历史原始 ZIP 或临时验证文件。素材来源记录见 [ASSETS.md](ASSETS.md)。
 
 ## 授权 / Credits
 
@@ -151,6 +154,22 @@ ATTRIBUTES='''* text=auto
 '''
 CHANGELOG='''# 更新记录
 
+## 2026.10.04
+
+- 新增竹蜻蜓、扫地、吹泡泡三套动画，共 197 张原始 RGBA 帧，保持 10 fps、原角色大小与扩展画布对齐。
+- 竹蜻蜓完整起飞、悬停、左右飞行、落地；扫地循环后擦汗；吹泡泡完整七秒后恢复待机。所有新动作都有限时收尾。
+- 接入右键动作、直接指令、对话关键词和有冷却、防重复、公平补偿的日常轮播。
+- 性格与语音支持呆萌女仆 / 雌小鬼两套同步切换；简化声学提示、重复惩罚和异常时长停止，雌小鬼采样温度微调为 0.9。
+- 最近 100 条原始语音和对应台词保存在本机，可从右键语音菜单打开；录音、密钥、个人记忆全部排除在发布包外。
+- 修复 Windows 首次语音触发时的 OpenSSL DLL 加载冲突。
+
+## 2026.10.02
+
+- 新增 Fish Audio 双向流式语音：回复生成中增量发送，PCM 音频到达即播放，最终回复不重复朗读。
+- 支持创建私有复刻音色，固定使用 S2.1 Pro Free，缺少音色时不回退到默认声音或付费模型。
+- 右键增加朗读开关、停止、重听；切换会话清空旧音频，语音错误不覆盖文字回复。
+- 本机密钥、音色 ID、参考音频与生成音频均不进入源码包。
+
 ## 2026.10.01
 
 - 吃满后播放吃饱揉肚子动画，结束恢复待机；新增游泳、转向、点击跃出水面，共 257 张原始透明帧，保持原始 10 fps。
@@ -183,6 +202,7 @@ ASSETS='''# 素材来源与运行方式
 - `app/assets/extra/ds_code_eureka`：`whale-pet-frames-code-eureka.zip` 中的无主气泡版本，76 帧。
 - `app/assets/extra/ds_tail_allow`：`whale-pet-frames-tail-allow.zip` 中的无文字版本，60 帧；`source.json` 记录原始 ZIP 和各 PNG 的 SHA-256。
 - `app/assets/extra/additions.json`：吃饱揉肚子及游泳，共 257 张原始透明 PNG（小尺寸帧仅存档）；完整尺寸的左右向由 swim-full 两个素材卷合并，保留 10 fps、转向、点击跃出和逐帧 SHA-256。
+- `app/assets/extra/activities.json`：竹蜻蜓、扫地、吹泡泡三套新增素材，共 197 张原始 RGBA PNG；记录三个 ZIP 与逐帧 SHA-256、10 fps、画布和对齐偏移。竹蜻蜓与扫地按源包推荐片段组合成有限时完整动作。
 - 对话气泡由程序实时绘制，可关闭。摸尾巴的确认和超时片段独立，不会串播。
 - `docs/previews/tail-allow.png`：应用实际渲染的分支预览。
 
@@ -206,7 +226,7 @@ def main():
             text=data.decode('utf-8-sig').replace('\r\n','\n').replace('\r','\n')
             data=(text.replace('\n','\r\n') if source.suffix=='.bat' else text).encode('utf-8')
         add(destination,data)
-    for name in ('whale_pet.py','pet_support.py','dsh_companion.py','companion_memory.py','companion_bubble.py','conversation_reactions.py','animation_policy.py','swim_behavior.py','requirements.txt','run_windows.bat','run_mac.command'):
+    for name in ('whale_pet.py','runtime_environment.py','pet_support.py','dsh_companion.py','companion_memory.py','companion_bubble.py','companion_tts.py','voice_delivery.py','voice_audio.py','voice_archive.py','conversation_reactions.py','animation_policy.py','swim_behavior.py','extra_activities.py','requirements.txt','run_windows.bat','run_mac.command'):
         copy(APP/name,'app/'+name)
     for path in sorted((APP/'assets').rglob('*')):
         if path.is_file() and path.suffix in ('.png','.json','.ico','.icns'):
@@ -214,10 +234,13 @@ def main():
     copy(APP/'dsh_plugin/index.mjs','app/dsh_plugin/index.mjs')
     copy(APP/'dsh_plugin/companion-chat.mjs','app/dsh_plugin/companion-chat.mjs')
     copy(APP/'dsh_plugin/persona.md','app/dsh_plugin/persona.md')
+    for name in ('persona-maid.md','persona-brat.md'):
+        copy(APP/'dsh_plugin'/name,'app/dsh_plugin/'+name)
     copy(TOOLS/'install_dsh_bridge.py','scripts/install_dsh_bridge.py')
+    copy(TOOLS/'configure_fish_tts.py','scripts/configure_fish_tts.py')
     copy(Path(__file__),'scripts/package_github.py')
     test_folder=APP/'tests'
-    for name in ('test_tail_allow.py','test_animation_policy.py','test_companion.py','test_walk.py','test_food_swim.py','bridge.test.mjs','companion-chat.test.mjs'):
+    for name in ('test_tail_allow.py','test_animation_policy.py','test_companion.py','test_walk.py','test_food_swim.py','test_extra_activities.py','test_tts.py','test_voice_delivery.py','test_voice_audio.py','test_runtime_environment.py','bridge.test.mjs','companion-chat.test.mjs'):
         candidate=test_folder/name
         if not candidate.exists(): candidate=APP/'_validation'/name
         copy(candidate,'app/tests/'+name)
@@ -227,6 +250,7 @@ def main():
         copy(ROOT/'docs/screenshots'/name,'docs/screenshots/'+name)
     chat_guide=ROOT/'docs/对话与记忆说明.md' if REPOSITORY else ROOT/'对话与记忆说明.md'
     copy(chat_guide,'docs/对话与记忆说明.md')
+    copy(ROOT/'docs/TTS使用说明.md' if REPOSITORY else ROOT/'TTS使用说明.md','docs/TTS使用说明.md')
     policy_path=ROOT/'docs/动画状态说明.md' if REPOSITORY else ROOT/'动画状态说明.md'
     policy=policy_path.read_text(encoding='utf-8').replace('桌宠/whale-pet/app/','app/')
     add('docs/动画状态说明.md',policy.encode('utf-8'))
