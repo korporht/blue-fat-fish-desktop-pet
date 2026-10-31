@@ -33,8 +33,10 @@ prepare_runtime()
 
 from PySide6.QtCore import Qt, QTimer, QPoint, QPointF, QRect, QRectF, QElapsedTimer
 from PySide6.QtGui import (QPixmap, QPainter, QAction, QCursor, QGuiApplication, QIcon, QImage, QFont,
-                           QFontMetrics, QPainterPath, QPen, QColor, QPolygonF, QImageReader, QRegion)
-from PySide6.QtWidgets import QApplication, QWidget, QMenu, QSystemTrayIcon, QMessageBox
+                           QFontMetrics, QPainterPath, QPen, QColor, QPolygonF, QImageReader, QRegion, QBitmap)
+from PySide6.QtWidgets import (QApplication, QWidget, QMenu, QSystemTrayIcon, QMessageBox,
+                               QWidgetAction, QLabel, QProgressBar, QHBoxLayout, QVBoxLayout,
+                               QProxyStyle, QStyle)
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from pet_support import FrameCache, LazyFrames, PngFrames, Preferences, configure_fonts
 from animation_policy import IDLE_RULES, BalancedChooser, IDLE_GAP, WALK_GAP, FIRST_IDLE_GAP
@@ -49,6 +51,28 @@ def resource_dir():
 
 EXPRESSIONS = [('neutral', '平静'), ('smile', '微笑'), ('laugh', '大笑'), ('blush', '害羞'), ('angry', '生气'),
                ('sad', '难过'), ('surprised', '惊讶'), ('sleepy', '困'), ('wink', '眨眼'), ('smug', '得意')]
+# Cream-and-blue rounded menu skin: soft pills on hover, quiet section headers, round check indicators.
+MENU_QSS = '''
+QMenu { background: #FCFAF5; color: #2A3F63; border: 1px solid #D5E0EE; border-radius: 12px;
+        padding: 8px; font-family: "Microsoft YaHei UI"; font-size: 12.5px; }
+QMenu::item { padding: 7px 30px 7px 12px; border-radius: 8px; background: transparent; }
+QMenu::item:selected { background: #DCEAF9; color: #1D3A66; }
+QMenu::item:disabled { color: #9DB2CC; background: transparent; padding: 10px 30px 3px 12px; font-size: 11px; }
+QMenu::separator { height: 1px; background: #E6EDF6; margin: 6px 10px; }
+QMenu::indicator { width: 15px; height: 15px; border-radius: 4.5px; border: 1.5px solid #B4C6DC; background: #FFFFFF; }
+QMenu::indicator:checked { background: #6FA0E8; border-color: #6FA0E8; }
+'''
+
+
+class MenuIconStyle(QProxyStyle):
+    """QMenu has no setIconSize; the small-icon metric decides how menu icons render."""
+    def __init__(self, base, px=22):
+        super().__init__(base)
+        self.px = px
+    def pixelMetric(self, metric, option=None, widget=None):
+        if metric == QStyle.PM_SmallIconSize:
+            return self.px
+        return super().pixelMetric(metric, option, widget)
 # ------------------------------------------------------------------ behaviour configuration (tsundere personality)
 SLEEP_TIMEOUT = 300.0              # s without interaction -> sleepy -> sleep
 ATTENTION_FIRST = (120.0, 180.0)   # s without interaction -> she asks for attention (poke_screen / tsun_peek)
@@ -341,6 +365,7 @@ class Pet(SwimBehavior,QWidget):
         self.last_input = time.monotonic()
         self.press_pos = None
         self.dragging = False
+        self.floating = False        # dropped above the ground: stays there until 「落回地面」or a drop at ground level
         self.pet_times = []           # click times inside POKE_WINDOW
         self.pet_chain = 0            # clicks in the current chain (each within PET_REPEAT_WINDOW of the previous)
         self.last_click = None
@@ -430,8 +455,24 @@ class Pet(SwimBehavior,QWidget):
     def _place_on_ground(self, center=False):
         r = self._screen_rect()
         x = r.center().x() - self.width() // 2 if center else self.x()
+        self.floating = False
         self.move(x, self._ground_y())
         self._clamp_position()
+
+    def drop_to_ground(self):
+        """Menu 「落回地面」: leave a floating spot and fall back to the work-area bottom."""
+        self._touch()
+        self.floating = False
+        gy = self._ground_y()
+        if self.y() >= gy - 2:
+            self.move(self.x(), gy)
+            self.set_state('land')
+        else:
+            r = self._screen_rect()
+            self.fall_from = max(0.0, (gy - self.y()) / max(1, r.height()))
+            self.vy = 0.0
+            self.set_state('fall')
+        self.schedule_save()
 
     def _clamp_position(self, rect=None, ground=True):
         r = rect or self._screen_rect()
@@ -441,7 +482,7 @@ class Pet(SwimBehavior,QWidget):
             y=max(r.top(),min(self.y(),max(r.top(),r.bottom()+1-self.height())))
             self.swim_x=float(x);self.swim_y=float(y)
         else:
-            y = self._ground_y() if ground else max(r.top(), min(self.y(), self._ground_y()))
+            y = self._ground_y() if ground and not self.floating else max(r.top(), min(self.y(), self._ground_y()))
         self.move(x, y)
 
     def _watch_screen(self, screen):
@@ -472,8 +513,13 @@ class Pet(SwimBehavior,QWidget):
         screen = next((s for s in QGuiApplication.screens() if s.name() == data.get('screen')),
                       QGuiApplication.primaryScreen())
         r = screen.availableGeometry()
-        self.move(data.get('x', r.center().x() - self.width() // 2), r.top())
-        self._clamp_position(r)
+        self.floating = bool(data.get('floating'))
+        if self.floating and isinstance(data.get('y'), int):
+            self.move(data.get('x', r.center().x() - self.width() // 2), data['y'])
+            self._clamp_position(r, ground=False)
+        else:
+            self.move(data.get('x', r.center().x() - self.width() // 2), r.top())
+            self._clamp_position(r)
 
     def schedule_save(self):
         if self.preferences and not self.selftest:
@@ -484,7 +530,8 @@ class Pet(SwimBehavior,QWidget):
             return
         screen = QGuiApplication.screenAt(self.geometry().center()) or QGuiApplication.primaryScreen()
         data = {'scale': self.scale, 'bubbles': self.bubbles_on, 'quiet': self.quiet, 'walking': self.walking,
-                'swimming':self.swimming,'hunger': self.hunger, 'x': self.x(), 'screen': screen.name(), 'meal_done': self.meal_done}
+                'swimming':self.swimming,'hunger': self.hunger, 'x': self.x(), 'y': self.y(), 'floating': self.floating,
+                'screen': screen.name(), 'meal_done': self.meal_done}
         if self.last_fed > 0:
             data['fed_at'] = time.time() - max(0.0, time.monotonic() - self.last_fed)
         if self._assistant is not None:
@@ -550,8 +597,14 @@ class Pet(SwimBehavior,QWidget):
 
     def show_help(self):
         QMessageBox.information(self, '蓝色大肥鱼 · 操作说明',
-            '单击：摸头；尾巴和肚子有专属反应。\n双击：开心跳跃。\n按住拖动：拎起她，松手落地。\n'
+            '单击：摸头；尾巴和肚子有专属反应。\n双击：开心跳跃。\n按住拖动：拎起她，松手停在原处；拎太久她会闹脾气直接落地，拖回地面或点「落回地面」也落地。\n'
             '右键：投喂、互动、玩耍、大小和陪伴设置。\n\n'
+            '输入指令框可以打：\n'
+            '　动作：喂饭 / 睡觉 / 醒醒 / 散步 / 游泳 / 停止游泳 / 写代码 / 竹蜻蜓 / 扫地 / 吹泡泡 / 舞狮 / 摸头 / 摸尾巴 / 开心\n'
+            '　陪伴：安静 / 活泼 / 隐藏 / dsh\n'
+            '　记忆：记住：… / 忘记：… / 记忆 / 清除聊天记忆\n'
+            '　任务：/任务 … 交给 dsh 干活；/插入 … 追加指示；/停止\n'
+            '　聊天：直接打字；/聊 … 只闲聊不触发任务。\n\n'
             '安静陪伴：保留呼吸和眨眼，暂停主动讨饭、求关注、散步和随机小动作；手动互动仍可用。\n'
             '隐藏后：双击系统托盘图标，或再次双击启动文件即可召回。\n'
             '大小、气泡、陪伴模式、饱腹度和位置会自动保存。')
@@ -689,6 +742,8 @@ class Pet(SwimBehavior,QWidget):
 
     def start_behaviour(self, st, length=None):
         """start an idle behaviour / menu action, including its entry/exit transitions"""
+        if self.floating and st in ('walk', 'trip') + SWIM_STATES:
+            self.floating = False          # movement actions live on the ground: they ground her
         dflt = {'wave': random.uniform(1.6, 3.2), 'tea': random.uniform(4.0, 6.5), 'curious': 4.0,
                 'dance': random.uniform(2.5, 4.0), 'sit': random.uniform(8, 16)}
         dflt.update(TSUN_LEN)
@@ -903,12 +958,12 @@ class Pet(SwimBehavior,QWidget):
         elapsed = max(0.0, (now - self.last_ms) / 1000.0)
         dt = min(0.1, elapsed)
         self.last_ms = now
-        if self.menu_open:
-            return
+        if self.menu_open and self.state in ('walk',)+SWIM_STATES:
+            return                               # moving states stay put while the menu is open
         previous_t = self.t
         animation_dt=elapsed if self.state in SWIM_STATES else dt
-        self.t += animation_dt
-        self.state_t += elapsed if self.state in ('walk',)+SWIM_STATES else dt
+        self.t += animation_dt                       # frames keep playing while a menu is up
+        self.state_t += 0.0 if self.menu_open else (elapsed if self.state in ('walk',)+SWIM_STATES else dt)
         st = self.state
         now_m = time.monotonic()
         idle_for = now_m - self.last_input
@@ -957,12 +1012,15 @@ class Pet(SwimBehavior,QWidget):
 
         if st == 'idle':
             self.animation_origin = 'automatic'
-            self.next_walk -= dt
-            self.next_behaviour -= dt
-            self.next_beg -= dt
+            if not self.menu_open:               # an open menu keeps her animating but hands-off
+                self.next_walk -= dt
+                self.next_behaviour -= dt
+                self.next_beg -= dt
             at_loop_start = self.t * self.anim.fps % len(self.anim) < 1
             meal = self._meal_due() if (self._auto_ds and not self.quiet and at_loop_start) else None
-            if self.quiet:
+            if self.menu_open:
+                pass                             # no automatic behaviour while the menu is up
+            elif self.quiet:
                 pass
             elif self._hover_step(dt, now_m):
                 pass
@@ -982,11 +1040,11 @@ class Pet(SwimBehavior,QWidget):
             elif self._auto_ds and self.hungry() and self.next_beg <= 0 and at_loop_start:
                 self.next_beg = random.uniform(*BEG_EVERY)
                 self.start_beg()
-            elif self.walking and self.next_walk <= 0 and at_loop_start and (self.next_behaviour > 0 or self.next_walk < self.next_behaviour):
+            elif self.walking and not self.floating and self.next_walk <= 0 and at_loop_start and (self.next_behaviour > 0 or self.next_walk < self.next_behaviour):
                 self._start_walk()
             elif self.next_behaviour <= 0 and at_loop_start:
                 self.next_behaviour = random.uniform(*IDLE_GAP)
-                allowed=None if self.swimming else {rule.name for rule in IDLE_RULES if rule.name!='swim'}
+                allowed=None if self.swimming and not self.floating else {rule.name for rule in IDLE_RULES if rule.name!='swim'}
                 choice = self._force_behaviour or self.idle_chooser.choose(now_m,allowed) or 'idle'
                 if choice != 'idle':
                     self.next_walk = max(self.next_walk, 3.0)
@@ -1029,10 +1087,10 @@ class Pet(SwimBehavior,QWidget):
                 self._said_frame = True
                 self.say(st)
             self._section_step()
-            if self.anim.root_motion:                # trip: keeps walking forward until the fall
+            if self.anim.root_motion:                # trip/copter: keeps moving forward; y stays put while floating
                 r = self._screen_rect()
                 x = max(r.left(), min(self._root_motion(), max(r.left(), r.right() + 1 - self.width())))
-                self.move(x, self._ground_y())
+                self.move(x, self.y() if self.floating else self._ground_y())
             if self.anim_done():
                 if st == 'land' and self.after_land:
                     nxt, self.after_land = self.after_land, None
@@ -1208,6 +1266,7 @@ class Pet(SwimBehavior,QWidget):
         if self.dragging:
             self.dragging = False
             self.press_pos = None
+            wanted_down = self.flustered
             if self.flustered:               # 'put me down!' -> after landing: hmph
                 self.flustered = False
                 self.after_land = 'tsun_hmph'
@@ -1217,10 +1276,15 @@ class Pet(SwimBehavior,QWidget):
             self.fall_from = max(0.0, (gy - self.y()) / max(1, r.height()))
             if self.y() >= gy - 2:
                 self.move(self.x(), gy)
+                self.floating = False
                 self.set_state('land')
-            else:
+            elif wanted_down:               # flustered: she insists on the ground right away
+                self.floating = False
                 self.vy = 0.0
                 self.set_state('fall')
+            else:
+                self.floating = True          # dropped in the air: stay where she was left
+                self.set_state('idle')
             self.schedule_save()
             return
         self.press_pos = None
@@ -1316,6 +1380,46 @@ class Pet(SwimBehavior,QWidget):
             self.menu_open = False
             self.hover_block_until = time.monotonic() + HOVER_COOLDOWN
 
+    _icon_cache = {}
+    def _menu_icon(self, anim_name, size=22):
+        """Rounded cream tile showing the animation's signature (mid) pose; drawn at 2x for HiDPI, cached."""
+        key = (anim_name, size)
+        if key in self._icon_cache:
+            return self._icon_cache[key]
+        icon = QIcon()
+        try:
+            anim = self.sp[anim_name]
+            frame = anim.frames[len(anim) // 2]     # frame 0 is often just the neutral start pose
+        except Exception:
+            if anim_name != 'idle':
+                return self._menu_icon('idle', size)   # e.g. 'swim' has no static anim name
+            self._icon_cache[key] = icon
+            return icon
+        # big-canvas clips (swim/bubble/lion: 384x576, 384x496, 480x270) keep the character small:
+        # crop to the drawn content first so the face is not a few pixels in the tile
+        try:
+            content = QRegion(QBitmap.fromImage(frame.toImage().createAlphaMask())).boundingRect()
+            if content.width() > 2 and content.height() > 2:
+                frame = frame.copy(content)
+        except Exception:
+            pass
+        scale = 2
+        tile = QPixmap(size * scale, size * scale)
+        tile.setDevicePixelRatio(scale)   # painter already works in logical pixels from here on
+        tile.fill(Qt.transparent)
+        p = QPainter(tile)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor('#EAF1FB'))
+        p.drawRoundedRect(0, 0, size - 1, size - 1, 8, 8)
+        inner = int(size * 0.84)
+        scaled = frame.scaled(inner, inner, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        p.drawPixmap((size - scaled.width()) // 2, (size - scaled.height()) // 2, scaled)
+        p.end()
+        icon = QIcon(tile)
+        self._icon_cache[key] = icon
+        return icon
+
     def build_menu(self, menu=None, tray=False):
         m = menu if menu is not None else QMenu(self)
         if menu is not None:
@@ -1323,15 +1427,48 @@ class Pet(SwimBehavior,QWidget):
                 if action.menu() is not None:
                     action.menu().deleteLater()
             m.clear()
-        m.setStyleSheet('QMenu { background: #f8fbff; color: #22365a; border: 1px solid #c3d5ea; '
-                        'padding: 6px; font-family: "Microsoft YaHei UI"; font-size: 12px; } '
-                        'QMenu::item { padding: 6px 24px 6px 12px; border-radius: 4px; } '
-                        'QMenu::item:selected { background: #deedfa; } '
-                        'QMenu::item:disabled { color: #7890ab; } '
-                        'QMenu::separator { height: 1px; background: #dbe5f0; margin: 5px 8px; }')
-        m.addAction(f'蓝色大肥鱼 · 饱腹度 {round(self.hunger * 100)}%').setEnabled(False)
+        m.setStyleSheet(MENU_QSS)
+        m._menu_style = MenuIconStyle(m.style())     # keep a ref: icon size for menu items
+        m.setStyle(m._menu_style)
+
+        # ── title card: portrait, name and a thin hunger bar
+        title = QWidgetAction(m)
+        box = QWidget()
+        lay = QHBoxLayout(box)
+        lay.setContentsMargins(6, 6, 6, 2)
+        lay.setSpacing(10)
+        face = QLabel()
+        face.setPixmap(self._menu_icon('idle', 38).pixmap(38, 38))
+        lay.addWidget(face)
+        col = QVBoxLayout()
+        col.setSpacing(4)
+        row = QHBoxLayout()
+        name = QLabel('蓝色大肥鱼')
+        name.setStyleSheet('font-size:13px; font-weight:600; color:#24406B; background:transparent;')
+        pct = QLabel(f'饱腹度 {round(self.hunger * 100)}%')
+        pct.setStyleSheet('font-size:10.5px; color:#8FA6C4; background:transparent;')
+        row.addWidget(name)
+        row.addStretch(1)
+        row.addWidget(pct)
+        bar = QProgressBar()
+        bar.setRange(0, 100)
+        bar.setValue(int(round(self.hunger * 100)))
+        bar.setFixedHeight(6)
+        bar.setTextVisible(False)
+        bar.setStyleSheet('QProgressBar{background:#E7EEF8; border:none; border-radius:3px;}'
+                          ' QProgressBar::chunk{background:#7FB0EC; border-radius:3px;}')
+        col.addLayout(row)
+        col.addWidget(bar)
+        lay.addLayout(col, 1)
+        title.setDefaultWidget(box)
+        m.addAction(title)
+
+        def section(text):
+            m.addAction(text).setEnabled(False)
+
         if self._assistant is not None:
             m.addAction('输入指令…').triggered.connect(self._assistant.open_window)
+            section('连接')
             self._assistant.add_connection_menu(m)
             self._assistant.add_voice_menu(m)
             modes = m.addMenu('运行模式')
@@ -1340,8 +1477,7 @@ class Pet(SwimBehavior,QWidget):
                 action.triggered.connect(lambda _=False, mode=key: self._assistant.set_mode(mode))
         if tray:
             m.addAction('显示蓝色大肥鱼' if not self.isVisible() else '召回蓝色大肥鱼').triggered.connect(lambda: self.recall())
-        m.addAction('回到主屏幕中央').triggered.connect(lambda: self.recall(center=True))
-        m.addSeparator()
+        section('互动')
         it = m.addMenu('互动 Interact')
         for label, kind in INTERACT:
             a = it.addAction(label)
@@ -1363,21 +1499,28 @@ class Pet(SwimBehavior,QWidget):
         act = m.addMenu('动作 Actions')
         for label, st, ln in ACTIONS:
             a = act.addAction(label)
+            anim_name = 'ds_swim_full_right' if st == 'swim' else STATE_ANIM.get(st, st)
+            a.setIcon(self._menu_icon(anim_name))
             a.triggered.connect(lambda _=False, s=st, l=ln: self.do_action(s, l))
-        size = m.addMenu('大小 Size')
+        section('设置')
+        look = m.addMenu('外观与陪伴')
+        size = look.addMenu('大小 Size')
         for s in (0.5, 0.75, 1.0, 1.25, 1.5, 2.0):
             a = size.addAction(f'{int(s * 100)}%'); a.setCheckable(True); a.setChecked(abs(s - self.scale) < 1e-6)
             a.triggered.connect(lambda _=False, v=s: self.set_scale(v))
-        b = m.addAction('对话气泡 Speech bubbles'); b.setCheckable(True); b.setChecked(self.bubbles_on)
+        b = look.addAction('对话气泡 Speech bubbles'); b.setCheckable(True); b.setChecked(self.bubbles_on)
         b.triggered.connect(self.set_bubbles)
-        q = m.addAction('安静陪伴'); q.setCheckable(True); q.setChecked(self.quiet)
+        q = look.addAction('安静陪伴'); q.setCheckable(True); q.setChecked(self.quiet)
         q.triggered.connect(self.set_quiet)
-        w = m.addAction('自由散步'); w.setCheckable(True); w.setChecked(self.walking)
+        w = look.addAction('自由散步'); w.setCheckable(True); w.setChecked(self.walking)
         w.setEnabled(not self.quiet)
         w.triggered.connect(self.set_walking)
-        swim=m.addAction('自由游泳');swim.setCheckable(True);swim.setChecked(self.swimming)
-        swim.setEnabled(not self.quiet);swim.triggered.connect(self.set_swimming)
-        m.addSeparator()
+        swim = look.addAction('自由游泳'); swim.setCheckable(True); swim.setChecked(self.swimming)
+        swim.setEnabled(not self.quiet); swim.triggered.connect(self.set_swimming)
+        place = m.addMenu('位置')
+        place.addAction('回到主屏幕中央').triggered.connect(lambda: self.recall(center=True))
+        place.addAction('落回地面').triggered.connect(self.drop_to_ground)
+        section('其他')
         m.addAction('睡觉 Sleep').triggered.connect(lambda: self.set_state('sleepy'))
         m.addAction('叫醒她').triggered.connect(lambda: (self._touch(), self.set_state('wake')))
         if self._tray is not None and self.isVisible():
@@ -1385,6 +1528,29 @@ class Pet(SwimBehavior,QWidget):
         m.addAction('操作说明').triggered.connect(self.show_help)
         m.addSeparator()
         m.addAction('退出 Quit').triggered.connect(QApplication.quit)
+
+        # icons for the categories (assistant-added submenus included) + icon size on every submenu
+        icons = {'输入指令': 'dsh_typing', '连接': 'dsh_typing', '语音': 'expr_smile', '运行模式': 'curious',
+                 '互动': 'petted', '投喂': 'ds_rice_slurp', '玩耍': 'idle_tea', '表情': 'expr_smile',
+                 '动作': 'dance', '外观': 'idle', '位置': 'curious', '睡觉': 'sleepy'}
+        for a in m.actions():
+            sub = a.menu()
+            if sub is not None:
+                sub.setStyleSheet(MENU_QSS)
+                sub._menu_style = MenuIconStyle(sub.style())
+                sub.setStyle(sub._menu_style)
+                for sa in sub.actions():
+                    inner = sa.menu()
+                    if inner is not None:            # e.g. 大小 Size inside 外观与陪伴
+                        inner.setStyleSheet(MENU_QSS)
+                        inner._menu_style = MenuIconStyle(inner.style())
+                        inner.setStyle(inner._menu_style)
+            if not a.isEnabled():            # section headers stay icon-less
+                continue
+            for key, anim in icons.items():
+                if a.text().startswith(key):
+                    a.setIcon(self._menu_icon(anim))
+                    break
         return m
 
     def do_action(self, st, ln):

@@ -804,7 +804,7 @@ class PetCompanion(QObject):
         self.voice.stop()
         if len(text) > 32000:
             self.report('指令过长，请拆成几条发送。'); return
-        if text.lstrip('/') in ('喂饭','投喂','睡觉','醒醒','安静','活泼','隐藏','散步','写代码','摸尾巴','摸头','开心','竹蜻蜓','飞行','扫地','吹泡泡','dsh','连接dsh'):
+        if text.lstrip('/') in ('喂饭','投喂','睡觉','醒醒','安静','活泼','隐藏','散步','游泳','停止游泳','写代码','摸尾巴','摸头','开心','竹蜻蜓','飞行','扫地','吹泡泡','舞狮','舞狮头','dsh','连接dsh'):
             self.local_command(text)
             self.clear_input(text)
             return
@@ -957,6 +957,8 @@ class PetCompanion(QObject):
                     '飞行':lambda:self.pet.do_action('ds_bamboo_copter',0),
                     '扫地':lambda:self.pet.do_action('ds_sweep',0),
                     '吹泡泡':lambda:self.pet.do_action('ds_bubble_pop',0),
+                    '舞狮':lambda:self.pet.do_action('ds_lion_dance',0),
+                    '舞狮头':lambda:self.pet.do_action('ds_lion_dance',0),
                     '摸尾巴':lambda: self.pet.interact('tail'), '摸头':lambda: self.pet.do_action('petted', 2), '开心':lambda: self.pet.do_action('happy', 0)}
         command = text.strip().lstrip('/')
         if command in commands:

@@ -121,15 +121,17 @@ class FoodSwimTests(unittest.TestCase):
         self.pet.set_scale(.75);self.assertTrue(self.pet._screen_rect().contains(self.pet.geometry()))
         self.pet.interact('rice');self.assertEqual(self.pet.state,'ds_rice_slurp')
         self.assertEqual((self.pet.width(),self.pet.height()),(192,192));self.assertEqual(self.pet.y(),self.pet._ground_y())
-    def test_drag_out_of_swim_keeps_existing_pickup_and_landing_behaviour(self):
+    def test_drag_out_of_swim_stays_where_dropped_and_menu_lands(self):
         self.pet.start_swim(duration=20);self.pet.mousePressEvent(_FakePress())
         event=QMouseEvent(QEvent.MouseMove,QPointF(120,80),QPointF(600,300),Qt.NoButton,Qt.LeftButton,Qt.NoModifier)
         self.pet.mouseMoveEvent(event)
         self.assertTrue(self.pet.dragging);self.assertEqual(self.pet.state,'dangle')
         self.assertEqual((self.pet.width(),self.pet.height()),(256,256))
         self.pet.mouseReleaseEvent(_FakeEvt());self.assertFalse(self.pet.dragging)
-        self.assertEqual(self.pet.state,'fall');self.until('idle',limit=260)
-        self.assertEqual(self.pet.y(),self.pet._ground_y())
+        self.assertEqual(self.pet.state,'idle');self.assertTrue(self.pet.floating)   # dropped in the air: stays
+        self.assertLess(self.pet.y(),self.pet._ground_y())
+        self.pet.drop_to_ground();self.assertEqual(self.pet.state,'fall');self.until('idle',limit=260)
+        self.assertEqual(self.pet.y(),self.pet._ground_y());self.assertFalse(self.pet.floating)
     def test_swim_toggle_filters_automatic_pool_and_finishes_current_trip(self):
         self.pet.start_swim(duration=20);self.pet.set_swimming(False)
         self.assertEqual(self.pet.state,'swim_return');self.until('idle',limit=30)

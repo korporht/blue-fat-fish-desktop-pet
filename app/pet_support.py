@@ -125,7 +125,7 @@ class Preferences:
             return {}
         clean = {'scale': finite_number(data.get('scale'), 1.0, 0.5, 2.0),
                  'hunger': finite_number(data.get('hunger'), 1.0, 0.0, 1.0)}
-        for key in ('bubbles', 'quiet', 'walking', 'swimming', 'dsh_auto_follow'):
+        for key in ('bubbles', 'quiet', 'walking', 'swimming', 'dsh_auto_follow', 'floating'):
             if isinstance(data.get(key), bool):
                 clean[key] = data[key]
         if data.get('pet_mode') in ('standalone', 'dsh'):
@@ -145,6 +145,8 @@ class Preferences:
             clean['screen'] = data['screen']
         if isinstance(data.get('x'), int) and not isinstance(data['x'], bool):
             clean['x'] = int(finite_number(data['x'], 0, -1000000, 1000000))
+        if isinstance(data.get('y'), int) and not isinstance(data['y'], bool):
+            clean['y'] = int(finite_number(data['y'], 0, -1000000, 1000000))
         stamp = data.get('fed_at')
         if isinstance(stamp, (int, float)) and not isinstance(stamp, bool) and math.isfinite(stamp):
             clean['fed_at'] = stamp
