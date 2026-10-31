@@ -15,10 +15,10 @@ from conversation_reactions import REACTIONS, keyword_reaction, is_neutral_chat
 from animation_policy import BalancedChooser, WORK_POOLS, SUCCESS_RULES, ERROR_RULES, WORK_ROTATION_GAP, tool_activity, is_service_busy
 
 from PySide6.QtCore import QObject, Signal, QTimer, QUrl, Qt, QPoint
-from PySide6.QtGui import QKeySequence, QShortcut, QColor
+from PySide6.QtGui import QKeySequence, QShortcut, QColor, QGuiApplication
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply, QNetworkProxy
-from PySide6.QtWidgets import (QDialog, QHBoxLayout, QLabel, QComboBox, QPushButton,
-                              QTextBrowser, QLineEdit, QCheckBox, QFileDialog, QWidget, QGraphicsDropShadowEffect)
+from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QFileDialog, QWidget,
+                              QFrame, QMenu, QGraphicsDropShadowEffect, QApplication)
 
 
 def message_text(data):
@@ -322,180 +322,9 @@ STATE_LABELS = {'idle':'等待指令', 'thinking':'正在思考', 'coding':'正�
                 'retrying':'遇到问题，继续尝试', 'success':'工作完成！', 'error':'工作遇到错误'}
 
 
-class CommandInput(QLineEdit):
-    """Empty input and side padding drag; text still selects normally."""
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.drag_offset = None
-
-    def toPlainText(self):
-        return self.text()
-
-    def setPlainText(self, text):
-        self.setText(text)
-
-    def mousePressEvent(self, event):
-        edge = event.position().x() <= 12 or event.position().x() >= self.width() - 12
-        if event.button() == Qt.MiddleButton or (event.button() == Qt.LeftButton and
-                (not self.text() or edge or event.modifiers() & Qt.AltModifier)):
-            self.drag_offset = event.globalPosition().toPoint() - self.window().pos()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event):
-        if self.drag_offset is not None and event.buttons() & (Qt.LeftButton | Qt.MiddleButton):
-            self.window().move(event.globalPosition().toPoint() - self.drag_offset)
-            event.accept()
-        else:
-            super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        if self.drag_offset is not None:
-            self.drag_offset = None
-            self.window().companion.pet.schedule_save()
-            event.accept()
-        else:
-            super().mouseReleaseEvent(event)
-
-    def contextMenuEvent(self, event):
-        self.window().open_context_menu(event.globalPos())
-
-
-class CommandWindow(QDialog):
-    def __init__(self, companion):
-        super().__init__(None, Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.NoDropShadowWindowHint)
-        self.companion = companion
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setWindowTitle('蓝色大肥鱼')
-        self.resize(360, 58); self.setFixedHeight(58); self.setMinimumWidth(240)
-        self.last_feedback = ''
-        self.last_reply = ''
-        layout = QHBoxLayout(self); layout.setContentsMargins(10, 10, 10, 10)
-        self.input = CommandInput(self); self.input.setFixedHeight(38)
-        self.input.setStyleSheet('''QLineEdit {
-            background: rgba(235,245,255,185); color: #315576;
-            border: 1px solid rgba(255,255,255,210); border-radius: 13px;
-            padding: 7px 12px; font-size: 12px; selection-background-color: #aacced;
-        } QLineEdit:focus {
-            background: rgba(242,249,255,205); border-color: rgba(155,194,231,150);
-        }''')
-        shadow = QGraphicsDropShadowEffect(self.input)
-        shadow.setBlurRadius(16); shadow.setOffset(0, 3); shadow.setColor(QColor(40,72,110,40))
-        self.input.setGraphicsEffect(shadow); layout.addWidget(self.input)
-        self.input.returnPressed.connect(self.send)
-        self.shortcut = QShortcut(QKeySequence('Ctrl+Return'),self); self.shortcut.activated.connect(self.send)
-
-        # The same session and delivery model serves the context menu. Its state
-        # widgets stay under a hidden parent; only the input is visible.
-        self.controls = QWidget(self); self.controls.hide()
-        self.mode = QComboBox(self.controls); self.mode.addItem('独立陪伴','standalone'); self.mode.addItem('跟随 dsh','dsh')
-        self.mode.currentIndexChanged.connect(lambda: companion.set_mode(self.mode.currentData()))
-        self.sessions = QComboBox(self.controls); self.sessions.currentIndexChanged.connect(self.select_session)
-        self.status = QLabel('独立陪伴',self.controls)
-        self.refresh_button = QPushButton(self.controls)
-        self.new_button = QPushButton(self.controls)
-        self.send_button = QPushButton(self.controls)
-        self.stop_button = QPushButton(self.controls)
-        self.auto = QCheckBox(self.controls); self.auto.setChecked(companion.auto_follow)
-        self.auto.toggled.connect(companion.set_auto_follow)
-        self.project = QLineEdit(companion.project,self.controls)
-        self.steer = QCheckBox(self.controls)
-        self.transcript = QTextBrowser(self.controls); self.transcript.document().setMaximumBlockCount(3000)
-        self.live = QLabel(self.controls); self.live.setTextFormat(Qt.PlainText)
-        self.update_mode(companion.mode)
-
-    def update_mode(self, mode):
-        self.input.setPlaceholderText('和蓝色大肥鱼说点什么…')
-        self.update_tooltip()
-
-    def update_tooltip(self):
-        details = self.last_reply or self.last_feedback or ('已连接 dsh' if self.companion.connected else '等待连接 dsh' if self.companion.mode == 'dsh' else '独立陪伴')
-        source = '网页版 dsh' if self.companion.dsh_profile == 'web' else '桌面版 dsh'
-        self.input.setToolTip('<b>蓝色大肥鱼 · ' + source + '</b><br>' + html.escape(details[:1500]).replace('\n','<br>') + '<br><br>回车发送 · 空白处或两侧拖动 · Alt + 拖动 · 右键设置')
-
-    def append(self, speaker, text):
-        if not text:
-            return
-        self.transcript.append('<p><b>' + html.escape(speaker) + '</b><br>' + html.escape(text).replace('\n','<br>') + '</p>')
-        if speaker != '你':
-            if speaker == 'dsh':
-                self.companion.last_task_reply = text
-                return
-            self.last_feedback = text
-            if speaker == '蓝色大肥鱼':
-                self.last_reply = text
-                self.companion.show_reply(text)
-            self.update_tooltip()
-
-    def open_context_menu(self, position):
-        comp = self.companion
-        menu = self.input.createStandardContextMenu()
-        menu.setStyleSheet('QMenu {background:#f2f7fd; color:#315576; border:1px solid #ccdfef; padding:5px;} '
-                            'QMenu::item {padding:6px 18px;} QMenu::item:selected {background:#dceafb;}')
-        menu.addSeparator()
-        menu.addAction('蓝色大肥鱼 · ' + (STATE_LABELS.get(comp.activity.state,'已连接') if comp.connected else '等待连接' if comp.mode=='dsh' else '独立陪伴')).setEnabled(False)
-        comp.add_connection_menu(menu)
-        comp.add_voice_menu(menu)
-        modes = menu.addMenu('陪伴方式')
-        for mode,label in (('standalone','独立陪伴'),('dsh','跟随 dsh')):
-            action=modes.addAction(label); action.setCheckable(True); action.setChecked(comp.mode==mode)
-            action.triggered.connect(lambda _=False, selected=mode: comp.set_mode(selected))
-        if comp.mode == 'dsh':
-            sessions=menu.addMenu('当前会话')
-            for index in range(self.sessions.count()):
-                identity=self.sessions.itemData(index)
-                action=sessions.addAction(self.sessions.itemText(index)); action.setCheckable(True); action.setChecked(identity==comp.session_id)
-                action.triggered.connect(lambda _=False, identity=identity: self.pick_session(identity))
-            auto=menu.addAction('跟随正在工作的会话'); auto.setCheckable(True); auto.setChecked(comp.auto_follow)
-            auto.triggered.connect(self.auto.setChecked)
-            menu.addAction('刷新会话').triggered.connect(comp.client.refresh)
-            menu.addAction('新会话').triggered.connect(comp.new_session)
-            menu.addAction('工作目录…').triggered.connect(self.choose_folder)
-            steer=menu.addAction('插入当前工作'); steer.setCheckable(True); steer.setChecked(self.steer.isChecked()); steer.triggered.connect(self.steer.setChecked)
-            stop=menu.addAction('停止当前工作'); stop.setEnabled(comp.connected and bool(comp.session_id) and not comp.creating); stop.triggered.connect(comp.cancel)
-        menu.addSeparator()
-        menu.addAction('重看她的上一句').triggered.connect(lambda: comp.show_reply(comp.last_persona_reply))
-        memory=menu.addMenu('她的记忆')
-        memory.addAction('查看长期记忆').triggered.connect(lambda: comp.report(comp.memory.describe()))
-        for fact in comp.memory.data['facts']:
-            label=(fact['key']+'=' if fact['key'] else '')+fact['text']
-            item=memory.addMenu(label[:50])
-            item.addAction('查看这一条').triggered.connect(lambda _=False,label=label:comp.report(label))
-            item.addAction('忘记这一条').triggered.connect(lambda _=False,identity=fact['id']:comp.report(comp.memory.forget(identity)))
-        memory.addAction('清除近期聊天').triggered.connect(lambda: comp.clear_memory(False))
-        memory.addAction('清除长期记忆').triggered.connect(lambda: comp.clear_memory(True))
-        reports=menu.addAction('主动汇报任务进展'); reports.setCheckable(True); reports.setChecked(comp.reports_enabled)
-        reports.triggered.connect(comp.set_reports)
-        menu.addAction('收起输入框').triggered.connect(self.hide)
-        menu.exec(position); menu.deleteLater()
-
-    def pick_session(self, identity):
-        self.auto.setChecked(False)
-        row=self.companion.session_rows.get(identity,{})
-        if row.get('cwd'):
-            self.companion.project=row['cwd']; self.project.setText(row['cwd'])
-        self.companion.select(identity)
-
-    def send(self):
-        text=self.input.text().strip()
-        if text:
-            self.companion.send(text,'steer' if self.steer.isChecked() else 'queue')
-
-    def choose_folder(self):
-        folder=QFileDialog.getExistingDirectory(self,'选择工作目录',self.project.text())
-        if folder:
-            self.project.setText(folder); self.companion.set_project(folder)
-
-    def select_session(self):
-        if self.sessions.currentData():
-            self.pick_session(self.sessions.currentData())
-
-    def closeEvent(self,event):
-        self.hide(); event.ignore()
-
-
 class PetCompanion(QObject):
+    notify = Signal(str, str, str)      # kind, title, body -- feeds the OS-level toast
+
     def __init__(self, pet, data_dir, saved=None, mode=None, profile=None):
         super().__init__(pet)
         saved = saved or {}
@@ -504,7 +333,6 @@ class PetCompanion(QObject):
         self.home = saved.get('dsh_home', os.path.join(os.environ.get('USERPROFILE', str(Path.home())), '.dsh'))
         self.dsh_profile = profile or saved.get('dsh_profile', 'desktop')
         if self.dsh_profile not in ('web','desktop'): self.dsh_profile = 'desktop'
-        self.input_position = QPoint(saved['input_x'], saved['input_y']) if type(saved.get('input_x')) is int and type(saved.get('input_y')) is int else None
         default_project = next((p for p in Path(__file__).resolve().parents if (p/'启动桌宠.bat').is_file()), Path(__file__).resolve().parent)
         self.project = saved.get('dsh_project', str(default_project))
         self.profile_sessions = dict(saved.get('dsh_profile_sessions', {}))
@@ -515,7 +343,6 @@ class PetCompanion(QObject):
         self.voice = FishSpeech(data_dir, self)
         self.voice.problem.connect(self.voice_problem)
         self.last_persona_reply = ''
-        self.last_task_reply = ''
         self.reply_bubble = None
         self.chatting = False
         self.chat_reply = None
@@ -523,7 +350,11 @@ class PetCompanion(QObject):
         self.chat_turn_id = ''
         self.emotion_reply = None; self.emotion_epoch = 0
         self.session_rows = {}
+        self.chat_session = saved.get('chat_session', '')
+        self.chat_user_text = ''
         self.reports_enabled = saved.get('companion_reports', True)
+        self.notifications_enabled = saved.get('notifications', True)
+        self.notice_key = None
         self.report_reason = ''
         self.report_identity = ''
         self.last_report_at = 0.0
@@ -534,9 +365,10 @@ class PetCompanion(QObject):
         self.activity = Activity()
         self.busy = False
         self.connected = False
-        self.live_text = ''
         self.last_stream_at = 0.0
-        self.window = None
+        self.session_items = []
+        self.last_feedback = ''
+        self.last_reply = ''
         self.sending = False
         self.creating = False
         self.rendered_state = 'idle'
@@ -572,10 +404,9 @@ class PetCompanion(QObject):
         self.profile_sessions[self.dsh_profile] = self.session_id
         value = {'pet_mode':self.mode, 'dsh_home':self.home, 'dsh_project':self.project,
                 'dsh_session':self.session_id, 'dsh_auto_follow':self.auto_follow,
-                'companion_reports':self.reports_enabled, 'dsh_profile':self.dsh_profile,
+                'companion_reports':self.reports_enabled, 'notifications':self.notifications_enabled,
+                'chat_session':self.chat_session, 'dsh_profile':self.dsh_profile,
                 'dsh_profile_sessions':dict(self.profile_sessions)}
-        position = self.window.pos() if self.window else self.input_position
-        if position is not None: value.update(input_x=position.x(), input_y=position.y())
         return value
 
     def add_connection_menu(self, menu):
@@ -594,9 +425,7 @@ class PetCompanion(QObject):
 
     def voice_problem(self, message):
         # Keep the answer bubble intact; audio status belongs in the menu/tooltip.
-        if self.window:
-            self.window.last_feedback = message
-            self.window.update_tooltip()
+        self.last_feedback = message
 
     def set_dsh_profile(self, profile):
         if profile not in ('web','desktop') or profile == self.dsh_profile: return
@@ -604,28 +433,11 @@ class PetCompanion(QObject):
         self.select('')
         self.sending = self.creating = self.connected = False
         self.session_rows.clear()
+        self.session_items = []
         self.dsh_profile = profile
         self.session_id = self.profile_sessions.get(profile, '')
-        if self.window:
-            self.window.sessions.blockSignals(True); self.window.sessions.clear(); self.window.sessions.blockSignals(False)
-            self.window.send_button.setEnabled(True)
         self.client.set_profile(profile)
         self.pet.schedule_save()
-
-    def open_window(self):
-        if self.window is None:
-            self.window = CommandWindow(self)
-            area = self.pet._screen_rect()
-            x = max(area.left(), min(self.pet.x() + self.pet.width() // 2 - self.window.width() // 2, area.right() + 1 - self.window.width()))
-            y = max(area.top(), min(self.pet.y() - self.window.height() - 8, area.bottom() + 1 - self.window.height()))
-            if self.input_position is not None:
-                x = max(area.left(), min(self.input_position.x(), area.right()+1-self.window.width()))
-                y = max(area.top(), min(self.input_position.y(), area.bottom()+1-self.window.height()))
-            self.window.move(x, y)
-            self.window.mode.blockSignals(True); self.window.mode.setCurrentIndex(1 if self.mode == 'dsh' else 0); self.window.mode.blockSignals(False)
-            self.connection_changed(self.connected, '已连接本机 dsh' if self.connected else '等待 dsh 桥接插件启动…' if self.mode == 'dsh' else '独立陪伴')
-            self.client.refresh()
-        self.window.show(); self.window.raise_(); self.window.activateWindow(); self.window.input.setFocus()
 
     def set_mode(self, mode):
         if mode not in ('standalone','dsh') or mode == self.mode:
@@ -644,9 +456,6 @@ class PetCompanion(QObject):
         self.client.polling = False
         if mode == 'standalone': self.client.stop_stream()
         else: self.client.refresh()
-        if self.window:
-            self.window.send_button.setEnabled(True)
-            self.window.mode.blockSignals(True); self.window.mode.setCurrentIndex(1 if mode == 'dsh' else 0); self.window.mode.blockSignals(False)
         self.pet.schedule_save()
 
     def set_auto_follow(self, on):
@@ -662,18 +471,17 @@ class PetCompanion(QObject):
             self.clip_state = ''; self.clip_deadline = 0.0; self.pending_outcome = None
             if self.pet.anim and (self.pet.anim.name.startswith('dsh_') or (self.pet.state=='expr' and self.pet.state_len>=1e8)):
                 self.pet.set_state('idle')
-        if self.window:
-            self.window.update_mode(self.mode)
-            for control in (self.window.sessions, self.window.auto, self.window.project, self.window.steer):
-                control.setEnabled(self.mode == 'dsh')
-            self.window.status.setText(STATE_LABELS.get(self.activity.state, label) if online else label)
-            self.window.update_tooltip()
-            for button in (self.window.new_button, self.window.refresh_button, self.window.stop_button):
-                button.setEnabled(self.mode == 'dsh' and (online or button is self.window.refresh_button))
+        self.status_text = STATE_LABELS.get(self.activity.state, label) if online else label
 
     def sessions_changed(self, rows):
         rows = [row for row in rows if not row.get('parentSessionId') and not row.get('archived')]
         self.session_rows = {row['sessionId']:row for row in rows}
+        # Built before the early returns below: the menu must never show a stale roster.
+        self.session_items = []
+        for row in rows:
+            name = row.get('title') or Path(row.get('cwd') or '').name or row['sessionId'][:12]
+            folder = Path(row.get('cwd') or '').name
+            self.session_items.append((('● ' if row.get('running') else '') + name[:45] + ' · ' + folder, row['sessionId']))
         scoped = [row for row in rows if self.same_project(row.get('cwd',''), self.project)]
         current = self.session_rows.get(self.session_id)
         # Recover the former unregistered test conversation, preserving its
@@ -690,13 +498,6 @@ class PetCompanion(QObject):
             return
         running = next((row for row in scoped if row.get('running') and '_validation' not in Path(row.get('cwd','')).parts), None)
         wanted = running['sessionId'] if self.auto_follow and running else self.session_id if current else ''
-        if self.window:
-            combo = self.window.sessions; combo.blockSignals(True); combo.clear()
-            for row in rows:
-                name = row.get('title') or Path(row.get('cwd') or '').name or row['sessionId'][:12]
-                folder=Path(row.get('cwd') or '').name
-                combo.addItem(('● ' if row.get('running') else '') + name[:45] + ' · ' + folder, row['sessionId'])
-            combo.setCurrentIndex(combo.findData(wanted)); combo.blockSignals(False)
         if not wanted and self.session_id:
             self.select('')
         if wanted and wanted != self.session_id:
@@ -708,15 +509,12 @@ class PetCompanion(QObject):
         self.stop_chat()
         self.report_timer.stop(); self.report_reason = ''; self.task_revision = self.reported_revision = 0
         self.session_id = session_id
-        self.activity = Activity(); self.busy = False; self.live_text = ''
+        self.activity = Activity(); self.busy = False
         self.pending_outcome = None; self.clip_state = ''; self.clip_deadline = 0.0
         self.rendered_state = 'idle'
         self.finished_timer.stop()
         if self.pet.anim.name.startswith('dsh_') or (self.pet.state=='expr' and self.pet.state_len>=1e8):
             self.pet.set_state('idle')
-        if self.window:
-            self.window.live.clear(); self.window.live.hide()
-            self.window.update_tooltip()
         if self.mode == 'dsh': self.client.follow(session_id)
         self.pet.schedule_save()
 
@@ -732,9 +530,14 @@ class PetCompanion(QObject):
         self.reply_bubble.show_reply(self.last_persona_reply)
         self.pet.update()
 
+    def feedback(self, message):
+        """One output path: remember it for the tooltip and put it in the speech bubble."""
+        text = clean(message, 400)
+        self.last_reply = text
+        self.show_reply(text)
+
     def report(self, message, speak=True):
-        if self.window: self.window.append('蓝色大肥鱼', clean(message,400))
-        else: self.show_reply(message)
+        self.feedback(message)
         if speak and message: self.voice.speak(clean(message.split('\n',1)[0],300))
 
     def chat_partial_received(self, value):
@@ -773,15 +576,9 @@ class PetCompanion(QObject):
         if not Path(self.project).is_dir():
             self.report('请先选择一个存在的工作目录。'); return
         self.creating = True
-        if self.window:
-            self.window.new_button.setEnabled(False); self.window.send_button.setEnabled(False)
         def created(value):
             self.creating = False
-            if self.window:
-                self.window.new_button.setEnabled(True); self.window.send_button.setEnabled(True)
             self.set_auto_follow(False)
-            if self.window:
-                self.window.auto.setChecked(False)
             self.select(value['sessionId'])
             self.session_rows[value['sessionId']] = {'sessionId':value['sessionId'], 'cwd':value.get('cwd',self.project),
                 'title':value.get('title',title), 'workspaceId':value.get('workspaceId')}
@@ -790,49 +587,9 @@ class PetCompanion(QObject):
             else: self.report('新会话准备好啦，主人可以交代工作了。在 dsh 对应工作目录下能找到它。')
         def failed(message):
             self.creating = False
-            if self.window:
-                self.window.new_button.setEnabled(True); self.window.send_button.setEnabled(True)
             self.report(message)
         title = title or '蓝色大肥鱼 · ' + time.strftime('%m-%d %H:%M')
         self.client.request('/session', {'cwd':self.project,'title':title}, created, failed)
-
-    def send(self, text, mode='queue'):
-        text = text.strip()
-        if self.sending or self.creating or self.chatting:
-            self.report('我还在处理上一句话呢，稍等一下。', speak=False)
-            return
-        self.voice.stop()
-        if len(text) > 32000:
-            self.report('指令过长，请拆成几条发送。'); return
-        if text.lstrip('/') in ('喂饭','投喂','睡觉','醒醒','安静','活泼','隐藏','散步','游泳','停止游泳','写代码','摸尾巴','摸头','开心','竹蜻蜓','飞行','扫地','吹泡泡','舞狮','舞狮头','dsh','连接dsh'):
-            self.local_command(text)
-            self.clear_input(text)
-            return
-        memory_text = text.removeprefix('/').strip()
-        if memory_text.startswith(('记住：','记住:','记住 ')):
-            self.report(self.memory.remember(memory_text[3:].strip())); self.clear_input(text); return
-        if memory_text.startswith(('忘记：','忘记:','忘记 ')):
-            self.report(self.memory.forget(memory_text[3:].strip())); self.clear_input(text); return
-        if memory_text in ('记忆','我的记忆','查看记忆'):
-            self.report(self.memory.describe()); self.clear_input(text); return
-        if memory_text == '清除聊天记忆':
-            self.clear_memory(False); self.clear_input(text); return
-        if text.startswith(('/任务 ','/任务：','/任务:')):
-            self.send_task(text[4:].strip(), mode, original=text); return
-        if text.startswith(('/插入 ','/插入：','/插入:')):
-            self.send_task(text[4:].strip(), 'steer', original=text); return
-        if text in ('/停止','停止当前任务','停止当前工作'):
-            self.cancel(); self.clear_input(text); return
-        if len(text)>4000:
-            self.report('聊天每次最多四千字，长任务请在前面加“/任务 ”，我就直接交给 dsh。'); return
-        if not self.connected:
-            self.react(keyword_reaction(text))
-            source = '网页版' if self.dsh_profile == 'web' else '桌面版'
-            self.report('我还没连上' + source + ' dsh。先运行“接入本地DSH.bat”并打开对应版本，右键输入框的“连接 dsh”可以切换。'); return
-        self.chat(text, mode)
-
-    def clear_input(self, text):
-        if self.window and self.window.input.text().strip() == text: self.window.input.clear()
 
     def chat(self, text, delivery='queue', event='user', reason=''):
         self.chatting = True
@@ -856,27 +613,15 @@ class PetCompanion(QObject):
             if epoch != self.chat_epoch or identity != self.session_id: return
             self.chatting=False; self.chat_reply=None; self.chat_turn_id=''
             reply=clean(value.get('reply',''),300)
-            action=value.get('action','chat') if not only_chat and event=='user' else 'chat'
-            if action in ('task','steer','new_task'):
-                self.voice.stop()
-                self.stop_emotion(); self.pending_reaction = None; self.reaction_timer.stop()
-                self.send_task(user_text,'steer' if action=='steer' and self.busy else delivery,original=user_text,new=action=='new_task')
-            elif action=='cancel':
-                self.voice.stop()
-                self.stop_emotion(); self.pending_reaction = None; self.reaction_timer.stop()
-                self.cancel(); self.clear_input(user_text)
-            else:
-                self.voice.finish(body['turnId'], reply)
-                self.report(reply, speak=False)
-                if event=='user':
-                    self.memory.add_turn(user_text,reply); self.clear_input(user_text)
-                else:
-                    self.last_report_at=time.monotonic(); self.reported_revision=self.task_revision
+            self.voice.finish(body['turnId'], reply)
+            self.report(reply, speak=False)
+            if event=='user': self.memory.add_turn(user_text, reply)
+            else: self.last_report_at=time.monotonic(); self.reported_revision=self.task_revision
         def failed(message):
             if epoch != self.chat_epoch: return
             self.chatting=False; self.chat_reply=None; self.chat_turn_id=''
             self.voice.stop()
-            if event=='user': self.report(message + ' 这句话还留在输入框里。', speak=False)
+            if event=='user': self.report(message, speak=False)
             elif self.mode=='dsh' and identity==self.session_id:
                 fallback={'waiting':'主人，工作在等你确认或回答问题，请去 dsh 看一眼。',
                     'success':'这轮工作结束啦，具体结果在 dsh；要我帮你看看重点也可以哦。',
@@ -897,76 +642,10 @@ class PetCompanion(QObject):
                 if emotion_epoch == self.emotion_epoch: self.emotion_reply = None
             self.emotion_reply = self.client.request('/emotion', {'text':text,'turnId':body['turnId'],'sessionId':identity}, classified, ignored)
 
-    def send_task(self, text, mode='queue', original=None, new=False):
-        if not text: return
-        original = original or text
-        if not self.connected:
-            self.report('任务还没发出去：请先打开并接入 dsh，输入已经保留。'); return
-        if self.sending or self.creating: return
-        if self.mode!='dsh': self.set_mode('dsh')
-        row=self.session_rows.get(self.session_id,{})
-        if new or not self.session_id or not row or not self.same_project(row.get('cwd',''),self.project):
-            self.new_session(lambda:self.send_task(text,mode,original), '蓝色大肥鱼 · '+text.replace('\n',' ')[:40]); return
-        self.set_auto_follow(False)
-        if self.window: self.window.auto.setChecked(False)
-        identity=self.session_id
-        self.sending = True
-        if self.window:
-            self.window.send_button.setEnabled(False)
-        request_id = str(uuid.uuid4())
-        def done(value):
-            self.sending = False
-            if self.window:
-                self.window.send_button.setEnabled(True)
-            if value.get('accepted') is not True:
-                self.report('dsh 没有确认接收这条指令，输入已经保留。'); return
-            self.clear_input(original)
-            title=self.session_rows.get(identity,{}).get('title') or identity[:20]
-            reply=('已经把新要求插进当前工作啦。' if mode=='steer' else '任务已经交给 dsh 啦，忙的时候会排队。')+'我会帮你留意进展。\ndsh 会话：'+title[:50]
-            self.report(reply); self.memory.add_turn(original,reply)
-        def failed(message):
-            self.sending = False
-            if self.window:
-                self.window.send_button.setEnabled(True)
-            self.report(message + '\n指令已保留在输入框中，请检查后再发送。')
-        def submit(_=None):
-            self.client.request('/prompt', {'sessionId':identity, 'requestId':request_id, 'text':text,
-                                           'mode':mode, 'clientTimeZone':'Asia/Shanghai'}, done, failed)
-        if row.get('workspaceId'): submit()
-        else:
-            def attached(value):
-                self.session_rows.setdefault(identity,{}).update(value); submit()
-            self.client.request('/attach',{'sessionId':identity},attached,failed)
-
     def cancel(self):
         if self.session_id and not self.creating:
             self.client.request('/cancel', {'sessionId':self.session_id}, lambda _: self.report('已经请求停止当前工作啦，等 dsh 确认结束。排队里的指令会保留。'), self.report)
         else: self.report('现在还没有绑定任务哦。')
-
-    def local_command(self, text):
-        self.pet._touch()
-        self.open_window(); self.window.append('你', text)
-        commands = {'喂饭':lambda: self.pet.interact('rice'), '投喂':lambda: self.pet.interact('rice'),
-                    '睡觉':lambda: self.pet.set_state('sleepy'), '醒醒':lambda: self.pet.recall(),
-                    '安静':lambda: self.pet.set_quiet(True), '活泼':lambda: self.pet.set_quiet(False),
-                    '隐藏':self.pet.hide_pet, '散步':lambda: self.pet.do_action('walk', 0),
-                    '游泳':lambda: self.pet.do_action('swim',0),
-                    '停止游泳':lambda:self.pet._begin_swim_return() if self.pet.state in SWIM_STATES else None,
-                    '写代码':lambda: self.pet.do_action('ds_code_eureka', 0),
-                    '竹蜻蜓':lambda:self.pet.do_action('ds_bamboo_copter',0),
-                    '飞行':lambda:self.pet.do_action('ds_bamboo_copter',0),
-                    '扫地':lambda:self.pet.do_action('ds_sweep',0),
-                    '吹泡泡':lambda:self.pet.do_action('ds_bubble_pop',0),
-                    '舞狮':lambda:self.pet.do_action('ds_lion_dance',0),
-                    '舞狮头':lambda:self.pet.do_action('ds_lion_dance',0),
-                    '摸尾巴':lambda: self.pet.interact('tail'), '摸头':lambda: self.pet.do_action('petted', 2), '开心':lambda: self.pet.do_action('happy', 0)}
-        command = text.strip().lstrip('/')
-        if command in commands:
-            commands[command](); self.window.append('蓝色大肥鱼', '收到～')
-        elif command in ('dsh','连接dsh'):
-            self.set_mode('dsh'); self.window.append('蓝色大肥鱼', '正在连接本机 dsh…')
-        else:
-            self.send(text)
 
     def progress_report(self):
         if self.busy and self.task_revision-self.reported_revision>=3 and time.monotonic()-self.last_report_at>=90:
@@ -997,8 +676,100 @@ class PetCompanion(QObject):
         previous=self.rendered_state
         if self.activity.reconcile(value):
             self.set_activity(self.activity.state)
+            self.announce(previous, self.activity.state)
             if previous in WORK_POOLS and self.activity.state in ('success','error','idle'):
                 self.queue_report(self.activity.state)
+
+    def announce(self, before, after):
+        """OS notice for the two moments that pull the user back into dsh; deduplicated per cursor."""
+        if not self.notifications_enabled or self.mode != 'dsh':
+            return
+        if after == 'waiting' and before != 'waiting':
+            kind, title, tail = 'waiting', '需要你确认', '在 dsh 里选一下，我等着'
+        elif after in ('success', 'error') and before != after:
+            kind, title, tail = after, '任务完成' if after == 'success' else '任务出错', '点这里回到会话'
+        else:
+            return
+        key = (kind, self.activity.cursor)
+        if key == self.notice_key:
+            return
+        self.notice_key = key
+        row = self.session_rows.get(self.session_id) or {}
+        name = (row.get('title') or '').strip() or Path(self.project).name or '当前会话'
+        self.notify.emit(kind, title, f'{name} · {tail}')
+
+    def set_notifications(self, enabled):
+        self.notifications_enabled = bool(enabled); self.pet.schedule_save()
+
+    CHAT_TITLE = '蓝色大肥鱼 · 聊天'
+
+    def open_chat(self):
+        """Create or reuse the companion session (preset blue-fish) and follow it."""
+        if self.mode != 'dsh':
+            self.set_mode('dsh')
+        if self.chat_session:
+            self.select(self.chat_session)
+            self.report('聊天会话已经开好了：到 dsh 里打开「' + self.CHAT_TITLE + '」，直接说话就行。')
+            return
+        def done(value):
+            self.chat_session = value.get('sessionId', '')
+            self.pet.schedule_save()
+            self.select(self.chat_session)
+            self.report('聊天会话开好了。到 dsh 里打开「' + self.CHAT_TITLE + '」跟我说话，我在这边听着。')
+        def failed(message):
+            self.report('开聊天会话失败：' + message)
+        self.client.request('/session', {'cwd': self.project, 'title': self.CHAT_TITLE,
+                                         'agentPreset': 'blue-fish'}, done, failed)
+
+    def add_her_menu(self, menu):
+        """Everything about her now lives in the pet's own right-click menu."""
+        chat = menu.addAction('在 dsh 里跟我聊天')
+        chat.triggered.connect(self.open_chat)
+        if self.session_items:
+            sessions = menu.addMenu('当前会话')
+            for text, identity in self.session_items:
+                action = sessions.addAction(text)
+                action.setCheckable(True)
+                action.setChecked(identity == self.session_id)
+                action.triggered.connect(lambda _=False, identity=identity: self.select(identity))
+        follow = menu.addAction('跟随正在工作的会话')
+        follow.setCheckable(True)
+        follow.setChecked(self.auto_follow)
+        follow.triggered.connect(self.set_auto_follow)
+        menu.addAction('刷新会话').triggered.connect(self.client.refresh)
+        menu.addAction('新会话（工作）').triggered.connect(self.new_session)
+        menu.addAction('工作目录…').triggered.connect(self._choose_folder)
+        stop = menu.addAction('停止当前工作')
+        stop.setEnabled(self.connected and bool(self.session_id) and not self.creating)
+        stop.triggered.connect(self.cancel)
+        menu.addSeparator()
+        menu.addSeparator()
+        self.add_connection_menu(menu)
+        self.add_voice_menu(menu)
+        modes = menu.addMenu('陪伴方式')
+        for mode, label in (('standalone', '独立陪伴'), ('dsh', '跟随 dsh')):
+            action = modes.addAction(label)
+            action.setCheckable(True)
+            action.setChecked(self.mode == mode)
+            action.triggered.connect(lambda _=False, selected=mode: self.set_mode(selected))
+        reports = menu.addAction('主动汇报任务进展')
+        reports.setCheckable(True)
+        reports.setChecked(self.reports_enabled)
+        reports.triggered.connect(self.set_reports)
+        notices = menu.addAction('系统通知（完成 / 待确认）')
+        notices.setCheckable(True)
+        notices.setChecked(self.notifications_enabled)
+        notices.triggered.connect(self.set_notifications)
+        menu.addAction('重看她的上一句').triggered.connect(lambda: self.show_reply(self.last_persona_reply))
+        memory = menu.addMenu('她的记忆')
+        memory.addAction('查看长期记忆').triggered.connect(lambda: self.report(self.memory.describe()))
+        memory.addAction('清除近期聊天').triggered.connect(lambda: self.clear_memory(False))
+        memory.addAction('清除长期记忆').triggered.connect(lambda: self.clear_memory(True))
+
+    def _choose_folder(self):
+        folder = QFileDialog.getExistingDirectory(None, '选择工作目录', self.project)
+        if folder:
+            self.set_project(folder)
 
     def frame_received(self, frame):
         kind = frame.get('type')
@@ -1025,25 +796,39 @@ class PetCompanion(QObject):
             self.last_stream_at=time.monotonic()
             value = frame.get('frame', {})
             if value.get('type') == 'start':
-                self.live_text = ''; self.set_activity(self.activity.stream('start'))
-                if self.window:
-                    self.window.live.clear(); self.window.live.hide()
+                self.set_activity(self.activity.stream('start'))
             elif value.get('type') == 'chunk':
                 chunk = value.get('chunk', {})
                 if isinstance(chunk, dict) and chunk.get('type') == 'reasoning-delta':
                     self.set_activity(self.activity.stream('reasoning-delta'))
                 elif isinstance(chunk, dict) and chunk.get('type') == 'text-delta':
-                    self.live_text = (self.live_text + str(chunk.get('text', chunk.get('delta', ''))))[-1000:]
                     self.set_activity(self.activity.stream('text-delta'))
-            elif value.get('type') == 'end' and self.window:
-                self.window.live.clear(); self.window.live.hide()
 
     def display_event(self, event):
-        kind = event.get('type')
-        if kind == 'user/message' and event.get('data', {}).get('source', {}).get('kind', 'user') != 'user':
+        """In the chat session she reads what you typed there: reacts, answers aloud, remembers."""
+        if not self.chat_session or self.session_id != self.chat_session:
             return
-        if kind == 'assistant/message':
-            self.last_task_reply=message_text(event.get('data', {}))[-2400:]
+        kind = event.get('type')
+        data = event.get('data') if isinstance(event.get('data'), dict) else {}
+        if kind == 'user/message':
+            source = data.get('source') or data.get('message', {}).get('source') or {}
+            if source.get('kind', 'user') != 'user':
+                return
+            text = message_text(data)
+            if not text:
+                return
+            self.chat_user_text = clean(text, 400)
+            self.react(keyword_reaction(text))
+        elif kind == 'assistant/message':
+            text = message_text(data)
+            if not text:
+                return
+            reply = clean(text, 300)
+            self.feedback(reply)
+            if self.chat_user_text:
+                self.memory.add_turn(self.chat_user_text, reply)
+                self.chat_user_text = ''
+            self.voice.speak(reply)
 
     def can_animate(self):
         if self.pet.dragging or self.pet.menu_open or self.pet.press_pos is not None or not self.pet.isVisible():
@@ -1092,8 +877,7 @@ class PetCompanion(QObject):
         if changed: self.thinking_played=False
         self.rendered_state=state; self.activity.state=state
         self.busy=state in WORK_POOLS and self.mode=='dsh'
-        if self.window:
-            self.window.status.setText(STATE_LABELS.get(state,'已连接 dsh')); self.window.update_tooltip()
+        self.status_text = STATE_LABELS.get(state,'已连接 dsh')
         if self.busy:
             self.pending_outcome=None; self.finished_timer.stop(); self.resume_animation()
         elif state in ('success','error') and changed:
@@ -1155,5 +939,4 @@ class PetCompanion(QObject):
         self.closed = True; self.stop_chat(); self.report_timer.stop(); self.progress_timer.stop()
         self.animation_timer.stop(); self.celebration_timer.stop(); self.finished_timer.stop()
         self.client.enable(False)
-        if self.window: self.window.hide()
         if self.reply_bubble: self.reply_bubble.timer.stop(); self.reply_bubble.hide(); self.reply_bubble.deleteLater()

@@ -85,10 +85,10 @@ class TailTests(unittest.TestCase):
         self.pet.set_bubbles(False); self.offer(); self.assertIsNone(self.pet.bubble)
         before=self.pet.state_t; self.pet.menu_open=True; self.step(120); self.assertEqual(self.pet.state_t,before)
         self.pet.menu_open=False; self.until('ds_tail_allow_timeout'); self.step(3); self.assertIsNone(self.pet.bubble)
-    def test_dsh_work_resumes_after_tail_and_local_command_exists(self):
+    def test_dsh_work_resumes_after_tail(self):
         comp=PetCompanion(self.pet,APP/'_validation/missing-bridge',mode='standalone'); self.pet._assistant=comp
         try:
-            comp.local_command('摸尾巴'); self.assertEqual(self.pet.state,'ds_tail_touch')
+            self.pet.interact('tail'); self.assertEqual(self.pet.state,'ds_tail_touch')
             comp.set_mode('dsh'); comp.animation_timer.stop(); comp.client.timer.stop()
             comp.set_activity('coding'); self.pet.interact('tail'); comp.set_activity('reading')
             self.assertEqual(self.pet.state,'ds_tail_touch'); self.until('ds_tail_allow')

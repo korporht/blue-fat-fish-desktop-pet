@@ -55,14 +55,14 @@ class CompanionTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory()
         self.pet=Pet(sprites,selftest=True); self.pet.timer.stop(); self.pet.show()
         self.comp=PetCompanion(self.pet,self.temp.name,mode='dsh')
-        self.pet._assistant=self.comp; self.comp.open_window(); self.comp.client.timer.stop(); self.comp.connected=True
+        self.pet._assistant=self.comp; self.comp.client.timer.stop(); self.comp.connected=True
         self.comp.project=str(APP); self.comp.session_id='real'
         self.comp.session_rows={'real':{'sessionId':'real','cwd':str(APP),'title':'真正的任务','workspaceId':'workspace'}}
         self.calls=[]
         self.comp.client.request=lambda route,data=None,callback=None,failure=None:self.calls.append((route,data,callback,failure))
 
     def tearDown(self):
-        self.comp.shutdown(); self.comp.window.deleteLater(); self.pet.deleteLater(); app.processEvents(); self.temp.cleanup()
+        self.comp.shutdown(); self.pet.deleteLater(); app.processEvents(); self.temp.cleanup()
 
     def last_call(self, route):
         return next(call for call in reversed(self.calls) if call[0] == route)
@@ -101,7 +101,7 @@ class CompanionTests(unittest.TestCase):
         from unittest.mock import patch
         with patch.object(self.comp.voice,'begin') as begin, patch.object(self.comp.voice,'update') as update, \
              patch.object(self.comp.voice,'finish') as finish, patch.object(self.comp.voice,'speak') as speak:
-            self.comp.send('你好')
+            self.comp.chat('你好')
             turn=self.last_call('/chat')[1]['turnId']
             begin.assert_called_once_with(turn,emotion='greeting')
             self.comp.chat_partial_received({'turnId':turn,'reply':'主人，','speechSafe':False})
@@ -122,17 +122,17 @@ class CompanionTests(unittest.TestCase):
     def test_selected_voice_preset_reaches_chat_context_even_with_voice_disabled(self):
         self.comp.voice.set_preset('brat')
         self.comp.voice.set_enabled(False)
-        self.comp.send('你好')
+        self.comp.chat('你好')
         body=self.last_call('/chat')[1]
         self.assertEqual(body['personaPreset'],'brat')
         self.assertEqual(body['sessionId'],'real')
         self.last_call('/chat')[2]({'action':'chat','reply':'噗，主人来啦～'})
         self.comp.voice.set_preset('maid')
-        self.comp.send('早安')
+        self.comp.chat('早安')
         self.assertEqual(self.last_call('/chat')[1]['personaPreset'],'maid')
 
     def test_persona_switch_discards_old_prompt_reply_without_clearing_memory_or_task(self):
-        self.comp.send('你好')
+        self.comp.chat('你好')
         old=self.last_call('/chat')[2]
         self.assertTrue(self.comp.chatting)
         self.comp.memory.remember('爱好=鲷鱼烧')
@@ -143,7 +143,7 @@ class CompanionTests(unittest.TestCase):
         self.assertEqual(self.comp.session_id,'real')
         self.assertEqual(self.comp.memory.data['facts'][0]['text'],'鲷鱼烧')
         self.assertFalse(self.comp.memory.data['recent'])
-        self.comp.send('你好')
+        self.comp.chat('你好')
         self.assertEqual(self.last_call('/chat')[1]['personaPreset'],'brat')
 
     def test_session_switch_stops_pending_or_playing_voice(self):
@@ -153,7 +153,7 @@ class CompanionTests(unittest.TestCase):
             self.assertTrue(stop.called)
 
     def test_profile_switch_isolates_sessions_and_discards_old_chat(self):
-        self.comp.send('你好'); stale=self.last_call('/chat')[2]
+        self.comp.chat('你好'); stale=self.last_call('/chat')[2]
         self.comp.set_dsh_profile('web')
         self.assertEqual(self.comp.client.profile,'web'); self.assertFalse(self.comp.connected)
         self.assertEqual(self.comp.profile_sessions['desktop'],'real'); self.assertEqual(self.comp.session_id,'')
@@ -264,75 +264,11 @@ class CompanionTests(unittest.TestCase):
         record['profile']='desktop'; (directory/'dsh-bridge-web.json').write_text(json.dumps(record))
         with self.assertRaises(ValueError): self.comp.client._credentials()
 
-    def test_empty_input_drag_and_text_selection_and_position_save(self):
-        window=self.comp.window; widget=window.input
-        window.move(200,200); app.processEvents()
-        local=QPoint(80,18); before=window.pos(); global_pos=widget.mapToGlobal(local)
-        def event(kind,position,global_point,button,buttons):
-            QApplication.sendEvent(widget,QMouseEvent(kind,QPointF(position),QPointF(global_point),button,buttons,Qt.NoModifier))
-        event(QEvent.MouseButtonPress,local,global_pos,Qt.LeftButton,Qt.LeftButton)
-        delta=QPoint(65,35)
-        event(QEvent.MouseMove,local+delta,global_pos+delta,Qt.NoButton,Qt.LeftButton)
-        event(QEvent.MouseButtonRelease,local+delta,global_pos+delta,Qt.LeftButton,Qt.NoButton)
-        self.assertEqual(window.pos(),before+delta)
-        self.assertEqual(self.comp.preferences()['input_x'],window.x())
-        widget.setText('保留输入和选字'); before=window.pos(); global_pos=widget.mapToGlobal(local)
-        event(QEvent.MouseButtonPress,local,global_pos,Qt.LeftButton,Qt.LeftButton)
-        self.assertIsNone(widget.drag_offset)
-        event(QEvent.MouseButtonRelease,local,global_pos,Qt.LeftButton,Qt.NoButton)
-        self.assertEqual(window.pos(),before); self.assertEqual(widget.text(),'保留输入和选字')
-        edge=QPoint(4,18); global_pos=widget.mapToGlobal(edge)
-        event(QEvent.MouseButtonPress,edge,global_pos,Qt.LeftButton,Qt.LeftButton)
-        event(QEvent.MouseMove,edge+delta,global_pos+delta,Qt.NoButton,Qt.LeftButton)
-        event(QEvent.MouseButtonRelease,edge+delta,global_pos+delta,Qt.LeftButton,Qt.NoButton)
-        self.assertEqual(window.pos(),before+delta); self.assertEqual(widget.text(),'保留输入和选字')
-
-    def test_one_input_persona_reply_visible_raw_task_output_stays_in_dsh(self):
-        self.assertEqual(len([w for w in self.comp.window.findChildren(QLineEdit) if w.isVisible()]),1)
-        self.comp.window.input.setText('今天开心吗'); self.comp.send('今天开心吗')
-        route,body,done,failed=self.calls[-1]; self.assertEqual(route,'/chat')
-        done({'reply':'哼，主人来了，我就稍微开心一点啦。','action':'chat'})
-        self.assertTrue(self.comp.reply_bubble.isVisible()); self.assertIn('稍微开心',self.comp.reply_bubble.label.text())
-        self.assertEqual(self.comp.window.input.text(),'')
-        self.comp.display_event({'type':'assistant/message','data':{'content':[{'type':'text','text':'RAW-TECHNICAL-OUTPUT'}]}})
-        self.assertNotIn('RAW-TECHNICAL',self.comp.reply_bubble.label.text())
-        self.assertNotIn('RAW-TECHNICAL',self.comp.window.input.toolTip())
-
-    def test_reply_follows_pet_and_ignores_input_position_with_screen_clamping(self):
-        area=QRect(0,0,1400,1000)
-        self.pet._screen_rect=lambda:area
-        self.pet.move(600,600);self.comp.window.move(100,100)
-        self.comp.send('你好');self.last_call('/chat')[2]({'reply':'主人，我在这里哦。','action':'chat'})
-        bubble=self.comp.reply_bubble
-        self.assertTrue(bubble.isVisible())
-        self.assertLessEqual(abs(bubble.geometry().center().x()-self.pet.geometry().center().x()),1)
-        self.assertEqual(bubble.geometry().bottom()+9,self.pet.y())
-        before=bubble.pos()
-        self.comp.window.move(50,800);bubble.tick()
-        self.assertEqual(bubble.pos(),before)
-        self.comp.window.hide();bubble.tick()
-        self.assertEqual(bubble.pos(),before)
-        self.pet.move(self.pet.pos()+QPoint(60,-80));bubble.tick()
-        self.assertEqual(bubble.pos(),before+QPoint(60,-80))
-        self.pet.move(0,0);bubble.tick()
-        self.assertTrue(area.contains(bubble.geometry()))
-        self.assertGreaterEqual(bubble.y(),self.pet.geometry().bottom()+8)
-        self.pet.move(area.right()-self.pet.width()+1,600);bubble.tick()
-        self.assertTrue(area.contains(bubble.geometry()))
-
-    def test_task_routes_original_instruction_and_pins_session(self):
-        self.comp.window.input.setText('修复显示问题'); self.comp.send('修复显示问题')
-        self.last_call('/chat')[2]({'reply':'我准备看看','action':'task'})
-        route,body,done,_=self.calls[-1]; self.assertEqual(route,'/prompt'); self.assertEqual(body['text'],'修复显示问题')
-        self.assertFalse(self.comp.auto_follow); self.assertEqual(body['sessionId'],'real')
-        self.comp.window.input.setText('下一条先写在这里'); done({'accepted':True})
-        self.assertEqual(self.comp.window.input.text(),'下一条先写在这里')
-
     def test_reports_never_dispatch_and_old_chat_cannot_reply_after_selection(self):
         self.comp.chat('',event='report'); done=self.calls[-1][2]
         done({'reply':'在读取文件哦','action':'task'})
         self.assertEqual([c[0] for c in self.calls],['/chat'])
-        self.comp.send('你好'); old=self.calls[-1][2]
+        self.comp.chat('你好'); old=self.calls[-1][2]
         self.comp.select('another'); old({'reply':'STALE-REPLY','action':'task'})
         self.assertNotIn('STALE-REPLY',self.comp.last_persona_reply)
         self.assertFalse(any(c[0]=='/prompt' for c in self.calls))
@@ -346,16 +282,6 @@ class CompanionTests(unittest.TestCase):
         self.comp.sessions_changed([{'sessionId':'old-idle-test','cwd':str(APP),'running':False}])
         self.assertEqual(self.comp.session_id,'')
 
-    def test_explicit_task_creates_visible_session_before_prompt_and_chat_failure_retains_input(self):
-        self.comp.session_id=''; self.comp.window.input.setText('/任务 修复显示')
-        self.comp.send('/任务 修复显示')
-        self.assertEqual(self.calls[-1][0],'/session')
-        self.calls[-1][2]({'sessionId':'new','cwd':str(APP),'workspaceId':'workspace','title':'蓝色大肥鱼 · 修复显示'})
-        prompt=next(c for c in self.calls if c[0]=='/prompt'); self.assertEqual(prompt[1]['sessionId'],'new')
-        prompt[2]({'accepted':True})
-        self.comp.window.input.setText('你好'); self.comp.send('你好'); self.calls[-1][3]('暂时连接不上')
-        self.assertEqual(self.comp.window.input.text(),'你好'); self.assertFalse(self.comp.chatting)
-
     def test_keyword_reactions_cover_conversation_and_ignore_quoted_work(self):
         for text, emotion in {'大笨蛋':'teased','你个大笨蛋！':'teased','你真可爱':'shy','你好厉害':'proud',
             '我今天好难过':'sad','谢谢你':'grateful','早安呀':'greeting','给我跳个舞吧':'dance',
@@ -367,17 +293,17 @@ class CompanionTests(unittest.TestCase):
             with self.subTest(text=text): self.assertEqual(keyword_reaction(text),'none')
 
     def test_teasing_is_immediate_and_reply_does_not_restart_or_override_it(self):
-        self.comp.send('大笨蛋')
+        self.comp.chat('大笨蛋')
         self.assertEqual(self.pet.state,'tsun_hmph'); self.assertEqual(self.pet.animation_origin,'conversation')
         self.pet.t=0.7
         self.calls[-1][2]({'reply':'才没有呢，你再看看！','action':'chat','emotion':'shy'})
         self.assertEqual(self.pet.state,'tsun_hmph'); self.assertEqual(self.pet.t,0.7)
         self.assertTrue(self.comp.reply_bubble.isVisible())
-        self.comp.send('大笨蛋'); self.assertEqual(self.pet.t,0.7)
+        self.comp.chat('大笨蛋'); self.assertEqual(self.pet.t,0.7)
 
     def test_model_reaction_uses_existing_clip_and_work_resumes_afterward(self):
         self.comp.set_activity('coding')
-        self.comp.send('今天有件特别的事想告诉你')
+        self.comp.chat('今天有件特别的事想告诉你')
         # A classification may finish first without completing the reply.
         self.last_call('/emotion')[2]({'emotion':'surprised'})
         self.assertTrue(self.comp.chatting)
@@ -398,26 +324,9 @@ class CompanionTests(unittest.TestCase):
         self.pet.set_state('idle'); self.comp.reaction_tick()
         self.assertEqual(self.pet.state,'idle'); self.assertIsNone(self.comp.pending_reaction)
 
-    def test_task_report_unknown_and_late_emotions_do_not_play(self):
-        self.comp.send('帮我修复文件')
-        classify=self.last_call('/emotion')[2]
-        self.last_call('/chat')[2]({'reply':'我来看看。','action':'task'})
-        classify({'emotion':'dance'})
-        self.assertNotEqual(self.pet.state,'dance')
-        self.comp.sending=False
-        self.comp.chat('',event='report')
-        self.calls[-1][2]({'reply':'正在检查。','action':'chat','emotion':'teased'})
-        self.assertNotEqual(self.pet.state,'tsun_hmph')
-        self.comp.react('__arbitrary_animation__'); self.assertIsNone(self.comp.pending_reaction)
-        self.comp.send('今天有件特别的事')
-        self.pet._touch()
-        self.last_call('/emotion')[2]({'emotion':'curious'})
-        self.last_call('/chat')[2]({'reply':'让我猜猜。','action':'chat'})
-        self.assertNotEqual(self.pet.state,'curious')
-
     def test_standalone_and_all_mapped_clips_keep_valid_transitions(self):
         self.comp.set_mode('standalone'); self.comp.connected=False
-        self.comp.send('大笨蛋'); self.assertEqual(self.pet.state,'tsun_hmph')
+        self.comp.chat('大笨蛋'); self.assertEqual(self.pet.state,'tsun_hmph')
         for emotion in REACTIONS:
             self.pet.set_state('idle'); self.comp.reaction_at=-1e12; self.comp.reaction_last.clear()
             self.comp.react(emotion)
@@ -426,7 +335,7 @@ class CompanionTests(unittest.TestCase):
             self.assertEqual(self.pet.animation_origin,'conversation')
 
     def test_reply_does_not_wait_for_emotion_and_keyword_skips_classifier(self):
-        self.comp.send('我们聊点日常吧')
+        self.comp.chat('我们聊点日常吧')
         self.assertEqual([c[0] for c in self.calls],['/chat','/emotion'])
         self.assertEqual(set(self.last_call('/emotion')[1]),{'text','turnId','sessionId'})
         self.assertEqual(self.last_call('/emotion')[1]['sessionId'],'real')
@@ -434,13 +343,13 @@ class CompanionTests(unittest.TestCase):
         self.last_call('/chat')[2]({'reply':'好呀，今天过得怎么样？','action':'chat'})
         self.assertFalse(self.comp.chatting); self.assertTrue(self.comp.reply_bubble.isVisible())
         self.assertEqual(self.pet.state,'idle')
-        self.comp.send('早安呀')
+        self.comp.chat('早安呀')
         self.assertEqual(len([c for c in self.calls if c[0]=='/emotion']),1)
         self.assertEqual(self.pet.state,'wave')
         stale({'emotion':'cry'}); self.assertEqual(self.pet.state,'wave')
 
     def test_stream_preview_shows_prose_without_completing_or_dispatching_and_stale_turns_are_ignored(self):
-        self.comp.send('你好呀')
+        self.comp.chat('你好呀')
         _,body,done,_=self.last_call('/chat')
         self.assertTrue(body['stream'])
         self.comp.client.chat_partial.emit({'turnId':body['turnId'],'reply':'主人，你好'})
@@ -449,13 +358,13 @@ class CompanionTests(unittest.TestCase):
         self.assertFalse(self.comp.memory.data['recent']);self.assertFalse(any(call[0]=='/prompt' for call in self.calls))
         done({'reply':'主人，你好呀。','action':'chat'})
         self.assertFalse(self.comp.chatting);self.assertEqual(len(self.comp.memory.data['recent']),2)
-        self.comp.send('聊聊今天吧');self.comp.select('other')
+        self.comp.chat('聊聊今天吧');self.comp.select('other')
         self.comp.client.chat_partial.emit({'turnId':body['turnId'],'reply':'STALE-PREVIEW'})
         self.assertNotIn('STALE',self.comp.last_persona_reply)
 
     def test_neutral_or_failed_classifier_keeps_default_and_reply_succeeds(self):
         for failure in (False, True):
-            self.comp.send('我们聊些什么呢')
+            self.comp.chat('我们聊些什么呢')
             request=self.last_call('/emotion')
             request[3]('slow classifier') if failure else request[2]({'emotion':'none'})
             self.last_call('/chat')[2]({'reply':'今天是星期三。','action':'chat'})
@@ -467,10 +376,51 @@ class CompanionTests(unittest.TestCase):
             with self.subTest(text=text): self.assertTrue(is_neutral_chat(text))
         for text in ('好难过，你是谁？', '你是谁啊，我好奇', '帮我看看今天吃什么', '修改文件，现在几点', '今天有件特别的事想告诉你'):
             with self.subTest(text=text): self.assertFalse(is_neutral_chat(text))
-        self.comp.send('今天想吃什么？用一句话回答。')
+        self.comp.chat('今天想吃什么？用一句话回答。')
         self.assertEqual([c[0] for c in self.calls], ['/chat'])
         self.last_call('/chat')[2]({'reply':'想吃小饼干。','action':'chat'})
         self.assertEqual(self.pet.state,'idle')
         self.assertEqual(self.comp.last_persona_reply,'想吃小饼干。')
+
+    def test_open_chat_creates_the_companion_session_with_its_preset(self):
+        texts = []
+        self.comp.report = lambda message, speak=True: texts.append(message)
+        self.comp.open_chat()
+        route, body, done, _ = self.calls[-1]
+        self.assertEqual(route, '/session')
+        self.assertEqual(body['agentPreset'], 'blue-fish')
+        self.assertEqual(body['title'], '蓝色大肥鱼 · 聊天')
+        done({'sessionId': 'chat-1'})
+        self.assertEqual(self.comp.chat_session, 'chat-1')
+        self.assertEqual(self.comp.preferences()['chat_session'], 'chat-1')
+        self.assertIn('dsh', texts[-1])
+
+    def test_chat_session_replies_are_shown_and_remembered(self):
+        self.comp.chat_session = self.comp.session_id          # follow our own chat session
+        self.comp.display_event({'type': 'user/message',
+                                 'data': {'content': [{'type': 'text', 'text': '今天好累'}]}})
+        self.assertEqual(self.comp.chat_user_text, '今天好累')
+        self.comp.display_event({'type': 'assistant/message',
+                                 'data': {'content': [{'type': 'text', 'text': '那歇一会儿吧。'}]}})
+        self.assertIn('歇一会儿', self.comp.last_persona_reply)
+        rows = self.comp.memory.data['recent']
+        self.assertEqual([row['text'] for row in rows], ['今天好累', '那歇一会儿吧。'])
+        self.assertEqual(self.comp.chat_user_text, '')
+
+    def test_work_sessions_never_reach_her_bubble(self):
+        self.comp.chat_session = 'chat-1'
+        self.comp.session_id = 'work-1'
+        self.comp.display_event({'type': 'assistant/message',
+                                 'data': {'content': [{'type': 'text', 'text': '编译完成，0 errors'}]}})
+        self.assertEqual(self.comp.last_persona_reply, '')
+        self.assertEqual(self.comp.memory.data['recent'], [])
+
+    def test_her_menu_lists_every_control_without_a_window(self):
+        from PySide6.QtWidgets import QMenu
+        menu = QMenu()
+        self.comp.add_her_menu(menu)
+        labels = [action.text() for action in menu.actions()]
+        for expected in ('在 dsh 里跟我聊天', '系统通知（完成 / 待确认）', '她的记忆'):
+            self.assertIn(expected, labels)
 
 if __name__=='__main__': unittest.main()

@@ -1467,14 +1467,8 @@ class Pet(SwimBehavior,QWidget):
             m.addAction(text).setEnabled(False)
 
         if self._assistant is not None:
-            m.addAction('输入指令…').triggered.connect(self._assistant.open_window)
-            section('连接')
-            self._assistant.add_connection_menu(m)
-            self._assistant.add_voice_menu(m)
-            modes = m.addMenu('运行模式')
-            for key, label in (('standalone', '独立陪伴'), ('dsh', '跟随 dsh')):
-                action = modes.addAction(label); action.setCheckable(True); action.setChecked(self._assistant.mode == key)
-                action.triggered.connect(lambda _=False, mode=key: self._assistant.set_mode(mode))
+            section('她')
+            self._assistant.add_her_menu(m)
         if tray:
             m.addAction('显示蓝色大肥鱼' if not self.isVisible() else '召回蓝色大肥鱼').triggered.connect(lambda: self.recall())
         section('互动')
@@ -1640,7 +1634,6 @@ def main():
     ap.add_argument('--data-dir', help='override the portable preferences directory')
     ap.add_argument('--mode', choices=('standalone','dsh'), help='desktop companion mode')
     ap.add_argument('--dsh-profile', choices=('web','desktop'), help='select dsh Web or Desktop')
-    ap.add_argument('--chat', action='store_true', help='open the command window')
     args = ap.parse_args()
     if args.scale is not None and (not math.isfinite(args.scale) or not 0.5 <= args.scale <= 2.0):
         ap.error('--scale must be a finite number between 0.5 and 2.0')
@@ -1680,7 +1673,12 @@ def main():
     pet = Pet(sp, scale, args.selftest, preferences)
     if not args.selftest:
         from dsh_companion import PetCompanion
+        from toast import Toast
         pet._assistant = PetCompanion(pet, args.data_dir or os.path.join(base, 'userdata'), saved, args.mode, args.dsh_profile)
+        pet._toast = Toast()          # keep a ref: the notice card is reused, not recreated
+        pet._assistant.notify.connect(
+            lambda kind, title, body: pet._toast.show_toast(title, body))
+        app.aboutToQuit.connect(pet._toast.close)
         app.aboutToQuit.connect(pet._assistant.shutdown)
     app.aboutToQuit.connect(pet.save_preferences)
     if preferences:
@@ -1701,8 +1699,6 @@ def main():
                             pet._assistant.set_dsh_profile(command['dsh_profile'])
                         if command.get('mode'):
                             pet._assistant.set_mode(command['mode'])
-                        if command.get('chat'):
-                            pet._assistant.open_window()
                     except (ValueError, UnicodeError, AttributeError):
                         pass
                 client.readyRead.connect(receive)
@@ -1731,8 +1727,6 @@ def main():
         tray.show()
         pet._tray = tray
     pet.show()
-    if args.chat and pet._assistant is not None:
-        QTimer.singleShot(0, pet._assistant.open_window)
     pet.schedule_save()
     if args.selftest:
         run_selftest(app, pet, args.out)
@@ -2204,6 +2198,7 @@ class _FakePress(_FakeEvt):
 
     def globalPosition(self):
         return QPointF(500.0, 500.0)
+
 
 
 if __name__ == '__main__':

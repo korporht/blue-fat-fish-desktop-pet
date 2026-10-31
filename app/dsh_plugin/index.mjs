@@ -146,7 +146,8 @@ export async function createBridge(api, options = {}) {
         if (url.pathname === '/session') {
           if (typeof body.cwd !== 'string' || !body.cwd.trim()) throw new Error('Working folder required');
           const workspace=await workspaceFor(body.cwd);
-          const value=await api.create({workspaceId:workspace.id});
+          const preset=typeof body.agentPreset==='string'?body.agentPreset.trim():'';
+          const value=await api.create({workspaceId:workspace.id,...preset?{agentPreset:preset.slice(0,64)}:{}});
           let title='';
           if (typeof body.title==='string'&&body.title.trim()&&api.rename) {
             try { title=(await api.rename({sessionId:value.sessionId,title:body.title.trim().slice(0,100)})).title; } catch {}
