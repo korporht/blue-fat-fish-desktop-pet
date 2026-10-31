@@ -364,3 +364,21 @@ export class CompanionChat {
     throw new Error('快速聊天没有返回有效答复。');
   }
 }
+
+/** Sum the exact per-message usage dsh already records; missing buckets simply do not contribute. */
+export function sumUsage(events) {
+  const total = {inputTokens:0, outputTokens:0, cacheReadTokens:0, cacheWriteTokens:0, totalTokens:0};
+  let calls = 0, turns = 0;
+  for (const event of events || []) {
+    if (event?.type === 'turn/end') turns += 1;
+    if (event?.type !== 'assistant/message') continue;
+    const usage = event?.data?.usage;
+    if (!usage || typeof usage !== 'object') continue;
+    calls += 1;
+    for (const key of Object.keys(total)) {
+      const value = usage[key];
+      if (typeof value === 'number' && Number.isFinite(value) && value >= 0) total[key] += value;
+    }
+  }
+  return {...total, calls, turns};
+}

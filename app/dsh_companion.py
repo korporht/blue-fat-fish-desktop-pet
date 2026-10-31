@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 import time
-from urllib.parse import urlsplit, urlencode
+from urllib.parse import urlsplit, urlencode, quote
 import uuid
 from companion_memory import CompanionMemory, clean
 from todos import TodoList, describe as describe_due
@@ -760,6 +760,7 @@ class PetCompanion(QObject):
             sub.addAction('删除').triggered.connect(
                 lambda _=False, i=item['id']: (self.todos.remove(i), self.todo_refresh(), self.report('删掉啦。')))
         todo.addAction('清除已完成').triggered.connect(lambda: (self.todos.clear_done(), self.report('已清理。')))
+        menu.addAction('看看这个会话用了多少').triggered.connect(self.usage_report)
         menu.addSeparator()
         self.add_connection_menu(menu)
         self.add_voice_menu(menu)
@@ -800,6 +801,20 @@ class PetCompanion(QObject):
             from todo_card import TodoBadge
             self.todo_badge = TodoBadge(self)
         self.todo_badge.refresh()
+
+    def usage_report(self):
+        if self.mode != 'dsh' or not self.session_id:
+            self.report('先跟随一个会话，我才算得出用量。'); return
+        def done(value):
+            if not isinstance(value, dict) or 'totalTokens' not in value:
+                self.report('这次没读到用量。'); return
+            k = lambda key: value.get(key, 0) / 1000
+            self.report(f"这个会话 {value.get('turns', 0)} 轮 / {value.get('calls', 0)} 次调用，"
+                        f"共 {k('totalTokens'):.1f}k tokens（输入 {k('inputTokens'):.1f}k、"
+                        f"缓存命中 {k('cacheReadTokens'):.1f}k、输出 {k('outputTokens'):.1f}k）")
+        def failed(message):
+            self.report('读用量失败：' + message)
+        self.client.request('/usage?sessionId=' + quote(self.session_id, safe=''), None, done, failed)
 
     def add_todo(self):
         text, ok = QInputDialog.getText(None, '添加待办', '内容，可加 @18:30 或 @2026-11-02 09:00')

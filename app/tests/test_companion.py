@@ -400,6 +400,17 @@ class CompanionTests(unittest.TestCase):
         self.comp.todo_tick()
         self.assertEqual(len(seen), 1)
 
+    def test_usage_report_reads_the_followed_session(self):
+        texts = []
+        self.comp.report = lambda message, speak=True: texts.append(message)
+        self.comp.usage_report()
+        route = self.calls[-1][0]
+        self.assertTrue(route.startswith('/usage?sessionId=real'), route)
+        self.calls[-1][2]({'turns': 3, 'calls': 12, 'totalTokens': 253990, 'inputTokens': 253266,
+                           'cacheReadTokens': 512, 'outputTokens': 212})
+        self.assertIn('254.0k', texts[-1])
+        self.assertIn('3 轮', texts[-1])
+
     def test_open_chat_creates_the_companion_session_with_its_preset(self):
         texts = []
         self.comp.report = lambda message, speak=True: texts.append(message)
@@ -438,7 +449,7 @@ class CompanionTests(unittest.TestCase):
         menu = QMenu()
         self.comp.add_her_menu(menu)
         labels = [action.text() for action in menu.actions()]
-        for expected in ('在 dsh 里跟我聊天', '她的待办', '系统通知（完成 / 待确认）', '她的记忆'):
+        for expected in ('在 dsh 里跟我聊天', '她的待办', '看看这个会话用了多少', '系统通知（完成 / 待确认）', '她的记忆'):
             self.assertIn(expected, labels)
 
 if __name__=='__main__': unittest.main()

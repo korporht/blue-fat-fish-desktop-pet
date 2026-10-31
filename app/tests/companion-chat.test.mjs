@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {CompanionChat,taskView,taskTool,buildContext,LIMITS,readTaskView,toolState,partialChatReply,isClearlyCasual} from '../dsh_plugin/companion-chat.mjs';
+import {CompanionChat,taskView,taskTool,buildContext,LIMITS,readTaskView,toolState,partialChatReply,isClearlyCasual,sumUsage} from '../dsh_plugin/companion-chat.mjs';
 import {createBridge} from '../dsh_plugin/index.mjs';
 import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -337,4 +337,17 @@ test('workspace-attached creation, old-session recovery, authenticated compact t
     const view=await request('/task-view?sessionId=new'); assert.equal(view.outcome,'completed'); assert.doesNotMatch(JSON.stringify(view),/SECRET-|PRIVATE-/);
     assert.equal((await fetch(bridge.url+'/task-view?sessionId=new')).status,401);
   } finally {await bridge.close();await rm(folder,{recursive:true,force:true});}
+});
+
+test('session usage sums every assistant message and ignores malformed buckets', () => {
+  const events = [
+    {type:'turn/start'},
+    {type:'assistant/message',data:{usage:{inputTokens:100,outputTokens:10,cacheReadTokens:5,cacheWriteTokens:0,totalTokens:115}}},
+    {type:'assistant/message',data:{usage:{inputTokens:50,outputTokens:7,totalTokens:57}}},
+    {type:'assistant/message',data:{}},
+    {type:'tool/result'},
+    {type:'turn/end'},
+  ];
+  assert.deepEqual(sumUsage(events), {inputTokens:150,outputTokens:17,cacheReadTokens:5,cacheWriteTokens:0,totalTokens:172,calls:2,turns:1});
+  assert.equal(sumUsage([]).totalTokens, 0);
 });

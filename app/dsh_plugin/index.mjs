@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Carry the installer revision into dependencies so a live profile reload does
 // not reuse the previous bridge's cached module while its Harness keeps working.
-const {CompanionChat,readTaskView,taskStatus}=await import(new URL('./companion-chat.mjs'+new URL(import.meta.url).search,import.meta.url));
+const {CompanionChat,readTaskView,taskStatus,sumUsage}=await import(new URL('./companion-chat.mjs'+new URL(import.meta.url).search,import.meta.url));
 
 const defaultFile = resolve(dirname(fileURLToPath(import.meta.url)), '../userdata/dsh-bridge.json');
 
@@ -84,6 +84,12 @@ export async function createBridge(api, options = {}) {
         const identity=url.searchParams.get('sessionId');
         if (!identity||identity.length>512) throw new Error('Session required');
         return json(response,200,await readTaskView(api,identity,cancellation.signal));
+      }
+      if (request.method==='GET' && url.pathname==='/usage') {
+        const identity=url.searchParams.get('sessionId');
+        if (!identity||identity.length>512) throw new Error('Session required');
+        const view=await api.inspect(identity,cancellation.signal);
+        return json(response,200,{sessionId:identity,...sumUsage(view.events)});
       }
       if (request.method === 'GET' && url.pathname === '/follow') {
         const sessionId = url.searchParams.get('sessionId');
