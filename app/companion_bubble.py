@@ -36,8 +36,12 @@ class ReplyBubble(QDialog):
         pet = self.companion.pet
         area = pet._screen_rect()
         reference = pet.reply_anchor_rect()
+        lift = 0
+        badge = getattr(self.companion, 'todo_badge', None)
+        if badge is not None and badge.isVisible():
+            lift = badge.height() + 6        # stack above the todo badge
         x = max(area.left(), min(reference.center().x()-self.width()//2, area.right()+1-self.width()))
-        y = reference.top()-self.height()-8
+        y = reference.top()-self.height()-8-lift
         if y < area.top():
             y = min(area.bottom()+1-self.height(), reference.bottom()+8)
         self.move(x,max(area.top(),min(y,area.bottom()+1-self.height())))

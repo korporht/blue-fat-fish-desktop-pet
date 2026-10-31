@@ -7,6 +7,7 @@ import time
 from urllib.parse import urlsplit, urlencode
 import uuid
 from companion_memory import CompanionMemory, clean
+from todos import TodoList, describe as describe_due
 from companion_bubble import ReplyBubble
 from companion_tts import FishSpeech
 from voice_delivery import PRESETS, speech_emotion
@@ -17,7 +18,7 @@ from animation_policy import BalancedChooser, WORK_POOLS, SUCCESS_RULES, ERROR_R
 from PySide6.QtCore import QObject, Signal, QTimer, QUrl, Qt, QPoint
 from PySide6.QtGui import QKeySequence, QShortcut, QColor, QGuiApplication
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply, QNetworkProxy
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QFileDialog, QWidget,
+from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QFileDialog, QInputDialog, QWidget,
                               QFrame, QMenu, QGraphicsDropShadowEffect, QApplication)
 
 
@@ -340,6 +341,8 @@ class PetCompanion(QObject):
         self.session_id = self.profile_sessions.get(self.dsh_profile, '')
         self.auto_follow = saved.get('dsh_auto_follow', True)
         self.memory = CompanionMemory(data_dir)
+        self.todos = TodoList(data_dir)
+        self.todo_badge = None
         self.voice = FishSpeech(data_dir, self)
         self.voice.problem.connect(self.voice_problem)
         self.last_persona_reply = ''
@@ -396,6 +399,9 @@ class PetCompanion(QObject):
         self.report_timer = QTimer(self, singleShot=True, timeout=self.task_report)
         self.progress_timer = QTimer(self, timeout=self.progress_report)
         self.progress_timer.start(90000)
+        self.todo_timer = QTimer(self, timeout=self.todo_tick)
+        self.todo_timer.start(30000)
+        QTimer.singleShot(1500, self.todo_tick)
         # Chat uses only the configured model transport; standalone mode does
         # not follow or execute a Harness task unless the user requests one.
         QTimer.singleShot(0, lambda: self.client.enable(not self.closed))
@@ -743,6 +749,17 @@ class PetCompanion(QObject):
         stop.setEnabled(self.connected and bool(self.session_id) and not self.creating)
         stop.triggered.connect(self.cancel)
         menu.addSeparator()
+        todo = menu.addMenu('她的待办')
+        todo.addAction('添加…').triggered.connect(self.add_todo)
+        todo.addAction('看看清单').triggered.connect(lambda: self.report(self.todos.describe()))
+        for item in self.todos.open_items()[:8]:
+            when = describe_due(item.get('due')) + ' ' if item.get('due') else ''
+            sub = todo.addMenu((when + item['text'])[:34])
+            sub.addAction('完成').triggered.connect(
+                lambda _=False, i=item['id']: (self.todos.complete(i), self.todo_refresh(), self.report('搞定一件～')))
+            sub.addAction('删除').triggered.connect(
+                lambda _=False, i=item['id']: (self.todos.remove(i), self.todo_refresh(), self.report('删掉啦。')))
+        todo.addAction('清除已完成').triggered.connect(lambda: (self.todos.clear_done(), self.report('已清理。')))
         menu.addSeparator()
         self.add_connection_menu(menu)
         self.add_voice_menu(menu)
@@ -770,6 +787,30 @@ class PetCompanion(QObject):
         folder = QFileDialog.getExistingDirectory(None, '选择工作目录', self.project)
         if folder:
             self.set_project(folder)
+
+    def todo_tick(self):
+        for item in self.todos.due_now():
+            self.todos.mark_notified(item['id'])
+            self.notify.emit('todo', '待办到点', item['text'])
+            self.report(f'到点啦：{item["text"]}', speak=True)
+        self.todo_refresh()
+
+    def todo_refresh(self):
+        if self.todo_badge is None:
+            from todo_card import TodoBadge
+            self.todo_badge = TodoBadge(self)
+        self.todo_badge.refresh()
+
+    def add_todo(self):
+        text, ok = QInputDialog.getText(None, '添加待办', '内容，可加 @18:30 或 @2026-11-02 09:00')
+        if not ok or not text.strip():
+            return
+        item = self.todos.add(text)
+        if item is None:
+            self.report('这条待办没看懂，换个说法试试。'); return
+        when = describe_due(item.get('due')) if item.get('due') else ''
+        self.report('记下了：' + (when + ' ' if when else '') + item['text'])
+        self.todo_refresh()
 
     def frame_received(self, frame):
         kind = frame.get('type')
@@ -939,4 +980,5 @@ class PetCompanion(QObject):
         self.closed = True; self.stop_chat(); self.report_timer.stop(); self.progress_timer.stop()
         self.animation_timer.stop(); self.celebration_timer.stop(); self.finished_timer.stop()
         self.client.enable(False)
+        if self.todo_badge: self.todo_badge.hide(); self.todo_badge.deleteLater()
         if self.reply_bubble: self.reply_bubble.timer.stop(); self.reply_bubble.hide(); self.reply_bubble.deleteLater()

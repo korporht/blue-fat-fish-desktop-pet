@@ -382,6 +382,24 @@ class CompanionTests(unittest.TestCase):
         self.assertEqual(self.pet.state,'idle')
         self.assertEqual(self.comp.last_persona_reply,'想吃小饼干。')
 
+    def test_todo_badge_shows_nearest_item_and_hides_when_empty(self):
+        self.comp.todos.add('买牛奶')
+        self.comp.todo_refresh()
+        self.assertTrue(self.comp.todo_badge.isVisible())
+        self.assertIn('买牛奶', self.comp.todo_badge.label.text())
+        self.comp.todos.complete(self.comp.todos.open_items()[0]['id'])
+        self.comp.todo_refresh()
+        self.assertFalse(self.comp.todo_badge.isVisible())
+
+    def test_due_todo_notifies_exactly_once(self):
+        seen = []
+        self.comp.notify.connect(lambda kind, title, body: seen.append((kind, body)))
+        self.comp.todos.add('开会', due=time.time() - 1)
+        self.comp.todo_tick()
+        self.assertEqual(seen, [('todo', '开会')])
+        self.comp.todo_tick()
+        self.assertEqual(len(seen), 1)
+
     def test_open_chat_creates_the_companion_session_with_its_preset(self):
         texts = []
         self.comp.report = lambda message, speak=True: texts.append(message)
@@ -420,7 +438,7 @@ class CompanionTests(unittest.TestCase):
         menu = QMenu()
         self.comp.add_her_menu(menu)
         labels = [action.text() for action in menu.actions()]
-        for expected in ('在 dsh 里跟我聊天', '系统通知（完成 / 待确认）', '她的记忆'):
+        for expected in ('在 dsh 里跟我聊天', '她的待办', '系统通知（完成 / 待确认）', '她的记忆'):
             self.assertIn(expected, labels)
 
 if __name__=='__main__': unittest.main()
