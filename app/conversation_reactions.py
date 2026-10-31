@@ -32,6 +32,7 @@ REACTIONS = {
     'sweep': Reaction('ds_sweep',cooldown=15.0),
     'copter': Reaction('ds_bamboo_copter',cooldown=20.0),
     'bubble': Reaction('ds_bubble_pop',cooldown=15.0),
+    'lion': Reaction('ds_lion_dance',cooldown=25.0),
 }
 
 # Work instructions and quoted/reported dialogue need the model's judgement.
@@ -59,6 +60,7 @@ def keyword_reaction(text):
         ('sweep', r'扫(?:一下|个)?地|打扫(?:房间|一下)?'),
         ('copter', r'竹蜻蜓|飞(?:一会|一下|起来|一圈)'),
         ('bubble', r'吹(?:个|一下|点)?泡泡|玩泡泡'),
+        ('lion', r'舞狮(?:头)?|狮头'),
         ('tail', r'(?:摸|碰|捏)(?:摸|一下|一摸|你的|你的那条|她的|蓝色大肥鱼的|一下你的|你的)?尾巴'),
         ('petting', r'摸摸|摸头|摸一下头|揉揉(?:你|脑袋|头)'),
         ('teased', r'^(?:(?:你|蓝色大肥鱼|大肥鱼|小鱼)(?:是|真是|这个|个|就是|真|好|怎么这么)?\s*)?(?:大?笨蛋|小笨蛋|笨笨|笨鱼|傻鱼|大傻瓜)[呀啊哦啦呢哼～~!！。,.，？?]*$|你.{0,5}(?:笨蛋|傻瓜)|(?:生气了|气鼓鼓|哼一个)'),

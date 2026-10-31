@@ -1,5 +1,5 @@
 """Finite play sequences assembled from the supplied 10 fps clips."""
-ACTIVITY_STATES=('ds_bamboo_copter','ds_sweep','ds_bubble_pop')
+ACTIVITY_STATES=('ds_bamboo_copter','ds_sweep','ds_bubble_pop','ds_lion_dance')
 
 def activity_sequences():
     # Start on frame 2 after the two transition frames, as specified by the pack.

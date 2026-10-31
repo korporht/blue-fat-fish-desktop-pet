@@ -187,7 +187,8 @@ SPEECH.update({'ds_tail_allow':['只、只能摸一下哦'], 'ds_tail_allow_touc
 ACTIONS.append(('写代码 → 灵光一闪', 'ds_code_eureka', 0))
 STATE_ANIM.update({name:name for name in ACTIVITY_STATES})
 ONESHOT_STATES += ACTIVITY_STATES
-ACTIONS += [('竹蜻蜓飞行','ds_bamboo_copter',0),('扫地','ds_sweep',0),('吹泡泡','ds_bubble_pop',0)]
+ACTIONS += [('竹蜻蜓飞行','ds_bamboo_copter',0),('扫地','ds_sweep',0),('吹泡泡','ds_bubble_pop',0),('舞狮头','ds_lion_dance',0)]
+SPEECH['ds_lion_dance']=['锵锵——舞狮咯！']
 
 
 class Anim:
