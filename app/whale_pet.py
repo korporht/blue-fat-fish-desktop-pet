@@ -26,7 +26,7 @@ screen (occasionally trips). Tsundere interactions (all tunable in the configura
   rice), Play (tea / fishing / butterfly / basin / token / deep think / server busy / shock), Expressions, Actions,
   size, speech bubbles on/off, Sleep, Quit. Speech bubbles are drawn by the app (not baked into the frames).
 """
-import json, os, random, sys, time, math, hashlib
+import json, os, random, sys, time, math, hashlib, traceback
 from datetime import datetime
 from runtime_environment import prepare_runtime
 prepare_runtime()
@@ -2080,6 +2080,36 @@ def run_selftest(app, pet, out):
         (252.8, lambda: (setattr(pet, '_force_behaviour', None), setattr(pet, '_clock_override', None), pet.set_state('idle')), 'idle', {}),
     ]
     idx = [0]
+    budget = steps[-1][0] + 45                 # the scripted tour plus slack; past that, quit instead of hanging
+    finished = [False]
+
+    def finish(code, note=None):
+        """Single exit point: write selftest.log and quit, even when a step raises or the tour stalls."""
+        if finished[0]:
+            return
+        finished[0] = True
+        if note:
+            log.append(note)
+        ok = code == 0 and all(l.endswith('OK') for l in log)
+        try:
+            open(os.path.join(out, 'selftest.log'), 'w', encoding='utf-8').write(
+                '\n'.join(log) + f'\nRESULT {"PASS" if ok else "FAIL"}\n')
+        except OSError:
+            pass
+        print('\n'.join(log), flush=True)
+        print('SELFTEST', 'PASS' if ok else 'FAIL', flush=True)
+        app.exit(0 if ok else 1)
+
+    def guarded(fn):
+        """QTimer callbacks swallow exceptions; log them and exit instead of leaving a live, stuck app."""
+        def run():
+            try:
+                fn()
+            except Exception:
+                finish(1, 'EXCEPTION during the tour:\n' + traceback.format_exc())
+        return run
+
+    QTimer.singleShot(int(budget * 1000), lambda: finish(1, f'watchdog: the tour did not finish within {budget:.0f} s'))
     pet._clock_override = datetime(2026, 1, 1, 15, 0)     # never meal time during the scripted tour (mocked clock)
     pool = [b for b, _ in IDLE_BEHAVIOURS]
     tb = pet.tail_box(pet.sp['idle'], 0)
@@ -2124,10 +2154,7 @@ def run_selftest(app, pet, out):
                        f'menus 玩耍+{{深度思考, 服务器繁忙, 震惊}} 互动+{{派活给她, 戳肚子}}, spam {SPAM_CLICKS} clicks / {SPAM_WINDOW} s, '
                        f'cooldown {BUSY_COOLDOWN} s, sleep-click shock rate {shock_rate:.3f} (seeded, target {SHOCK_WAKE_CHANCE}) '
                        + ('OK' if ds2_ok else 'MISMATCH'))
-            ok = all(l.endswith('OK') for l in log)
-            open(os.path.join(out, 'selftest.log'), 'w', encoding='utf-8').write('\n'.join(log) + f'\nRESULT {"PASS" if ok else "FAIL"}\n')
-            print('\n'.join(log)); print('SELFTEST', 'PASS' if ok else 'FAIL')
-            app.exit(0 if ok else 1)
+            finish(0)
             return
         t, fn, expect_after, extra = steps[idx[0]]
         pet.next_walk = pet.next_behaviour = 1e9      # no random walks / idle behaviours during the scripted tour
@@ -2161,9 +2188,9 @@ def run_selftest(app, pet, out):
                        f'pos=({pet.x()},{pet.y()}) bubble={bub} {" ".join(notes)} {"OK" if ok else "MISMATCH"}')
             idx[0] += 1
             nt = steps[idx[0]][0] if idx[0] < len(steps) else t + 0.3
-            QTimer.singleShot(int(max(50, (nt - t - 0.25) * 1000)), step)   # steps run at ~t (no drift)
-        QTimer.singleShot(250, check)
-    QTimer.singleShot(300, step)
+            QTimer.singleShot(int(max(50, (nt - t - 0.25) * 1000)), guarded(step))   # steps run at ~t (no drift)
+        QTimer.singleShot(250, guarded(check))
+    QTimer.singleShot(300, guarded(step))
 
 
 class _FakeEvt:
