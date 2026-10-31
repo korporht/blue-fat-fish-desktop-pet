@@ -121,6 +121,15 @@ class SpeechTests(unittest.TestCase):
         self.assertEqual(self.voice.turn,'');self.assertEqual(len(errors),1)
         self.assertIsNone(self.voice.socket)
 
+    def test_voice_goes_quiet_after_repeated_failures_then_reopens(self):
+        errors=[];self.voice.problem.connect(errors.append)
+        self.voice.fail('boom');self.voice.fail('boom')
+        self.assertGreater(self.voice.blocked_until,time.monotonic())
+        self.assertIn('安静',errors[-1])
+        self.assertFalse(self.voice.begin('quiet'))          # breaker open: no synthesis, no error
+        self.voice.blocked_until=0.0                          # cooldown elapsed
+        self.voice.begin('again');self.until(lambda:self.voice.started)
+
     def test_preset_menu_is_exclusive_and_switch_preserves_voice_credentials(self):
         menu=QMenu();self.voice.add_menu(menu,lambda:None)
         voice_menu=menu.actions()[0].menu()

@@ -22,6 +22,8 @@ try:
 except ImportError:  # Qt < 6.7 used the QAudio namespace for these enums.
     from PySide6.QtMultimedia import QAudio as QtAudio
 
+FAIL_LIMIT = 2
+FAIL_COOLDOWN = 600
 MODEL = 's2.1-pro-free'
 ENDPOINT = 'wss://api.fish.audio/v1/tts/live'
 SAMPLE_RATE = 44100
@@ -181,6 +183,8 @@ class FishSpeech(QObject):
         self.unflushed_chars = 0
         self.metrics = None
         self.capture = bytearray()
+        self.fails = 0                 # consecutive transport failures
+        self.blocked_until = 0.0       # circuit breaker: no synthesis until this monotonic deadline
         self.spoken_text = ''
         self.archive = VoiceArchive(folder)
         self.archive_write = None
@@ -195,6 +199,7 @@ class FishSpeech(QObject):
 
     def begin(self, turn, emotion='none'):
         self.stop(); self.config.reload()
+        if time.monotonic() < self.blocked_until: return False    # quiet until the breaker reopens
         if not self.config.enabled or not self.config.ready: return False
         self.preset = PRESETS[self.config.preset]
         self.delivery = SpeechText(emotion, self.config.preset)
@@ -333,10 +338,17 @@ class FishSpeech(QObject):
 
     def fail(self, message):
         self.record('error')
-        self.stop(); self.status = message; self.problem.emit(message)
+        self.stop()
+        self.fails += 1
+        if self.fails >= FAIL_LIMIT:
+            self.fails = 0
+            self.blocked_until = time.monotonic() + FAIL_COOLDOWN
+            message = f'语音连续出错，我先安静 {FAIL_COOLDOWN // 60} 分钟；文字照常。'
+        self.status = message; self.problem.emit(message)
 
     def record(self, outcome):
         """Archive the received voice, including partial audio on errors/cancellation."""
+        if outcome == 'generated': self.fails = 0
         row, self.metrics = self.metrics, None
         audio, self.capture = self.capture, bytearray()
         if row is None: return
