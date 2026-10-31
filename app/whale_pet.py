@@ -51,10 +51,15 @@ def resource_dir():
 
 EXPRESSIONS = [('neutral', '平静'), ('smile', '微笑'), ('laugh', '大笑'), ('blush', '害羞'), ('angry', '生气'),
                ('sad', '难过'), ('surprised', '惊讶'), ('sleepy', '困'), ('wink', '眨眼'), ('smug', '得意')]
+def menu_label(text):
+    """'夸夸她 Praise' -> '夸夸她'; labels without a gloss pass through."""
+    return text.split(' ')[0] if ' ' in text else text
+
+
 # Cream-and-blue rounded menu skin: soft pills on hover, quiet section headers, round check indicators.
 MENU_QSS = '''
 QMenu { background: #FCFAF5; color: #2A3F63; border: 1px solid #D5E0EE; border-radius: 12px;
-        padding: 8px; font-family: "Microsoft YaHei UI"; font-size: 12.5px; }
+        padding: 8px; min-width: 200px; font-family: "Microsoft YaHei UI"; font-size: 12.5px; }
 QMenu::item { padding: 7px 30px 7px 12px; border-radius: 8px; background: transparent; }
 QMenu::item:selected { background: #DCEAF9; color: #1D3A66; }
 QMenu::item:disabled { color: #9DB2CC; background: transparent; padding: 10px 30px 3px 12px; font-size: 11px; }
@@ -177,7 +182,7 @@ ACTIONS = [('开心跳跃 Happy', 'happy', 0), ('摸头 Pet', 'petted', 2.0), ('
            ('提裙礼 Curtsy', 'curtsy', 0), ('伸懒腰 Stretch', 'stretch', 0), ('喝茶 Tea', 'tea', 5.0),
            ('好奇 Curious', 'curious', 4.0), ('跳舞 Dance', 'dance', 3.0), ('坐下 Sit', 'sit', 10.0),
            ('摔倒 Trip', 'trip', 0), ('睡觉 Sleep', 'sleepy', 0),
-           ('哼！Hmph', 'tsun_hmph', 0), ('得意 Proud', 'tsun_proud', 0), ('偷看 Peek', 'tsun_peek', 0),
+           ('哼！ Hmph', 'tsun_hmph', 0), ('得意 Proud', 'tsun_proud', 0), ('偷看 Peek', 'tsun_peek', 0),
            ('指指 Point', 'tsun_point', 0), ('戳屏幕 Tap the screen', 'poke_screen', 0)]
 # Interact menu: (label, kind)
 INTERACT = [('夸夸她 Praise', 'praise'), ('要饼干 Ask for a cookie', 'cookie'), ('戳一下 Poke', 'poke'),
@@ -186,7 +191,7 @@ INTERACT = [('夸夸她 Praise', 'praise'), ('要饼干 Ask for a cookie', 'cook
 FEED = [('鲷鱼烧 Taiyaki', 'feed'), ('白米饭 Rice', 'rice')]
 # Play menu (玩耍/待机): (label, kind)
 PLAY = [('泡茶 Brew tea', 'tea'), ('钓鱼 Go fishing', 'fishing'), ('抓蝴蝶 Catch a butterfly', 'butterfly'),
-        ('君权盆授 Basin crown', 'basin'), ('偷啃 token Nibble a token', 'token'),
+        ('君权盆授 Basin crown', 'basin'), ('偷啃token Nibble a token', 'token'),
         ('深度思考 Deep think', 'think'), ('服务器繁忙 Server busy', 'busy'), ('震惊 Shock', 'shock')]
 PLAY_KIND = {'tea': 'idle_tea', 'fishing': 'idle_fishing', 'butterfly': 'idle_butterfly', 'basin': 'ds_basin',
              'token': 'ds_token_nibble', 'think': 'ds_deep_think', 'busy': 'ds_server_busy', 'shock': 'ds_shock_sit'}
@@ -1435,74 +1440,77 @@ class Pet(SwimBehavior,QWidget):
         title = QWidgetAction(m)
         box = QWidget()
         lay = QHBoxLayout(box)
-        lay.setContentsMargins(6, 6, 6, 2)
-        lay.setSpacing(10)
+        lay.setContentsMargins(2, 2, 2, 2)
+        lay.setSpacing(9)
         face = QLabel()
-        face.setPixmap(self._menu_icon('idle', 38).pixmap(38, 38))
+        face.setPixmap(self._menu_icon('idle', 32).pixmap(32, 32))
+        face.setFixedSize(32, 32)
         lay.addWidget(face)
         col = QVBoxLayout()
-        col.setSpacing(4)
+        col.setSpacing(5)
         row = QHBoxLayout()
+        row.setSpacing(6)
         name = QLabel('蓝色大肥鱼')
-        name.setStyleSheet('font-size:13px; font-weight:600; color:#24406B; background:transparent;')
+        name.setStyleSheet('font-size:12.5px; font-weight:600; color:#24406B; background:transparent;')
         pct = QLabel(f'饱腹度 {round(self.hunger * 100)}%')
-        pct.setStyleSheet('font-size:10.5px; color:#8FA6C4; background:transparent;')
+        pct.setStyleSheet('font-size:10px; color:#93A9C6; background:transparent;')
         row.addWidget(name)
         row.addStretch(1)
         row.addWidget(pct)
         bar = QProgressBar()
         bar.setRange(0, 100)
         bar.setValue(int(round(self.hunger * 100)))
-        bar.setFixedHeight(6)
+        bar.setFixedHeight(4)
         bar.setTextVisible(False)
-        bar.setStyleSheet('QProgressBar{background:#E7EEF8; border:none; border-radius:3px;}'
-                          ' QProgressBar::chunk{background:#7FB0EC; border-radius:3px;}')
+        bar.setStyleSheet('QProgressBar{background:#E7EEF8; border:none; border-radius:2px;}'
+                          ' QProgressBar::chunk{background:#7FB0EC; border-radius:2px;}')
         col.addLayout(row)
         col.addWidget(bar)
         lay.addLayout(col, 1)
         title.setDefaultWidget(box)
         m.addAction(title)
+        m.addSeparator()
 
-        def section(text):
-            m.addAction(text).setEnabled(False)
-
-        if self._assistant is not None:
-            section('她')
-            self._assistant.add_her_menu(m)
+        # ── one column, eight rows: everything else is a submenu, so the menu
+        #    never outgrows the screen and Qt never splits it into two columns
         if tray:
             m.addAction('显示蓝色大肥鱼' if not self.isVisible() else '召回蓝色大肥鱼').triggered.connect(lambda: self.recall())
-        section('互动')
-        it = m.addMenu('互动 Interact')
+        assistant = self._assistant
+        if assistant is not None:
+            assistant.add_chat_action(m)
+            task = m.addMenu('任务')
+            assistant.add_task_menu(task)
+            todo = m.addMenu('她的待办')
+            assistant.add_todo_menu(todo)
+
+        inter = m.addMenu('互动')
         for label, kind in INTERACT:
-            a = it.addAction(label)
-            a.triggered.connect(lambda _=False, k=kind: self.interact(k))
-        fd = m.addMenu('投喂 Feed')
+            inter.addAction(menu_label(label)).triggered.connect(lambda _=False, k=kind: self.interact(k))
+        inter.addSeparator()
+        fd = inter.addMenu('投喂')
         for label, kind in FEED:
-            a = fd.addAction(label)
-            a.triggered.connect(lambda _=False, k=kind: self.interact(k))
+            fd.addAction(menu_label(label)).triggered.connect(lambda _=False, k=kind: self.interact(k))
         fd.addSeparator()
         fd.addAction(f'饱腹度 {int(round(self.hunger * 100))}%' + (' (饿了)' if self.hungry() else '')).setEnabled(False)
-        pl = m.addMenu('玩耍/待机 Play')
+        pl = inter.addMenu('玩耍 / 待机')
         for label, kind in PLAY:
-            a = pl.addAction(label)
-            a.triggered.connect(lambda _=False, k=kind: self.play(k))
-        ex = m.addMenu('表情 Expressions')
+            pl.addAction(menu_label(label)).triggered.connect(lambda _=False, k=kind: self.play(k))
+        ex = inter.addMenu('表情')
         for key, zh in EXPRESSIONS:
-            a = ex.addAction(f'{zh} {key}')
-            a.triggered.connect(lambda _=False, k=key: self.show_expression(k))
-        act = m.addMenu('动作 Actions')
+            ex.addAction(menu_label(zh)).triggered.connect(lambda _=False, k=key: self.show_expression(k))
+        act = inter.addMenu('动作')
         for label, st, ln in ACTIONS:
-            a = act.addAction(label)
-            anim_name = 'ds_swim_full_right' if st == 'swim' else STATE_ANIM.get(st, st)
-            a.setIcon(self._menu_icon(anim_name))
-            a.triggered.connect(lambda _=False, s=st, l=ln: self.do_action(s, l))
-        section('设置')
-        look = m.addMenu('外观与陪伴')
-        size = look.addMenu('大小 Size')
+            act.addAction(menu_label(label)).triggered.connect(lambda _=False, s=st, l=ln: self.do_action(s, l))
+        inter.addSeparator()
+        inter.addAction('睡觉').triggered.connect(lambda: self.set_state('sleepy'))
+        inter.addAction('叫醒她').triggered.connect(lambda: (self._touch(), self.set_state('wake')))
+
+        look = m.addMenu('外观与位置')
+        size = look.addMenu('大小')
         for s in (0.5, 0.75, 1.0, 1.25, 1.5, 2.0):
             a = size.addAction(f'{int(s * 100)}%'); a.setCheckable(True); a.setChecked(abs(s - self.scale) < 1e-6)
             a.triggered.connect(lambda _=False, v=s: self.set_scale(v))
-        b = look.addAction('对话气泡 Speech bubbles'); b.setCheckable(True); b.setChecked(self.bubbles_on)
+        b = look.addAction('对话气泡'); b.setCheckable(True); b.setChecked(self.bubbles_on)
         b.triggered.connect(self.set_bubbles)
         q = look.addAction('安静陪伴'); q.setCheckable(True); q.setChecked(self.quiet)
         q.triggered.connect(self.set_quiet)
@@ -1511,40 +1519,41 @@ class Pet(SwimBehavior,QWidget):
         w.triggered.connect(self.set_walking)
         swim = look.addAction('自由游泳'); swim.setCheckable(True); swim.setChecked(self.swimming)
         swim.setEnabled(not self.quiet); swim.triggered.connect(self.set_swimming)
-        place = m.addMenu('位置')
+        look.addSeparator()
+        place = look.addMenu('位置')
         place.addAction('回到主屏幕中央').triggered.connect(lambda: self.recall(center=True))
         place.addAction('落回地面').triggered.connect(self.drop_to_ground)
-        section('其他')
-        m.addAction('睡觉 Sleep').triggered.connect(lambda: self.set_state('sleepy'))
-        m.addAction('叫醒她').triggered.connect(lambda: (self._touch(), self.set_state('wake')))
         if self._tray is not None and self.isVisible():
-            m.addAction('暂时隐藏').triggered.connect(self.hide_pet)
-        m.addAction('操作说明').triggered.connect(self.show_help)
-        m.addSeparator()
-        m.addAction('退出 Quit').triggered.connect(QApplication.quit)
+            look.addAction('暂时隐藏').triggered.connect(self.hide_pet)
 
-        # icons for the categories (assistant-added submenus included) + icon size on every submenu
-        icons = {'输入指令': 'dsh_typing', '连接': 'dsh_typing', '语音': 'expr_smile', '运行模式': 'curious',
-                 '互动': 'petted', '投喂': 'ds_rice_slurp', '玩耍': 'idle_tea', '表情': 'expr_smile',
-                 '动作': 'dance', '外观': 'idle', '位置': 'curious', '睡觉': 'sleepy'}
+        if assistant is not None:
+            link = m.addMenu('连接与语音')
+            assistant.add_connection_menu(link)
+            assistant.add_voice_menu(link)
+            modes = link.addMenu('陪伴方式')
+            for mode, label in (('standalone', '独立陪伴'), ('dsh', '跟随 dsh')):
+                action = modes.addAction(label)
+                action.setCheckable(True)
+                action.setChecked(assistant.mode == mode)
+                action.triggered.connect(lambda _=False, selected=mode: assistant.set_mode(selected))
+            her = m.addMenu('她')
+            assistant.add_her_menu(her)
+
+        m.addSeparator()
+        m.addAction('操作说明').triggered.connect(self.show_help)
+        m.addAction('退出').triggered.connect(QApplication.quit)
+
+        def style(menu):
+            menu.setStyleSheet(MENU_QSS)
+            menu._menu_style = MenuIconStyle(menu.style())
+            menu.setStyle(menu._menu_style)
+            for child in menu.actions():
+                if child.menu() is not None:
+                    style(child.menu())
+
         for a in m.actions():
-            sub = a.menu()
-            if sub is not None:
-                sub.setStyleSheet(MENU_QSS)
-                sub._menu_style = MenuIconStyle(sub.style())
-                sub.setStyle(sub._menu_style)
-                for sa in sub.actions():
-                    inner = sa.menu()
-                    if inner is not None:            # e.g. 大小 Size inside 外观与陪伴
-                        inner.setStyleSheet(MENU_QSS)
-                        inner._menu_style = MenuIconStyle(inner.style())
-                        inner.setStyle(inner._menu_style)
-            if not a.isEnabled():            # section headers stay icon-less
-                continue
-            for key, anim in icons.items():
-                if a.text().startswith(key):
-                    a.setIcon(self._menu_icon(anim))
-                    break
+            if a.menu() is not None:
+                style(a.menu())
         return m
 
     def do_action(self, st, ln):
@@ -1772,9 +1781,21 @@ def run_selftest(app, pet, out):
         pet.move(pet.x(), pet._ground_y() - 300)
         pet.mouseReleaseEvent(_FakeEvt())
 
+    def find_menu(menu, prefix):        # categories may nest (玩耍 lives under 互动)
+        for action in menu.actions():
+            sub = action.menu()
+            if sub is None:
+                continue
+            if action.text().startswith(prefix):
+                return sub
+            found = find_menu(sub, prefix)
+            if found is not None:
+                return found
+        return None
+
     def menu_play(label):              # trigger an entry of the real right-click Play submenu
         m = pet.build_menu()
-        sub = [a.menu() for a in m.actions() if a.menu() and a.text().startswith('玩耍')][0]
+        sub = find_menu(m, '玩耍')
         [a for a in sub.actions() if a.text().startswith(label)][0].trigger()
         pet.state_len = pet.anim.section[0] / pet.anim.fps + 1.0      # hold the loop section 1 s (not 8-15 s)
 
@@ -1801,7 +1822,7 @@ def run_selftest(app, pet, out):
 
     def menu_entry(top, label, hold=None):     # trigger an entry of a real right-click submenu
         m = pet.build_menu()
-        sub = [a.menu() for a in m.actions() if a.menu() and a.text().startswith(top)][0]
+        sub = find_menu(m, top)
         [a for a in sub.actions() if a.text().startswith(label)][0].trigger()
         if hold is not None:
             pet.state_len = pet.anim.section[0] / pet.anim.fps + hold
@@ -2119,7 +2140,7 @@ def run_selftest(app, pet, out):
     w = dict(IDLE_BEHAVIOURS)
     def labels(top):
         m = pet.build_menu()
-        sub = [a.menu() for a in m.actions() if a.menu() and a.text().startswith(top)][0]
+        sub = find_menu(m, top)
         return [a.text() for a in sub.actions()]
     pl_l, it_l = labels('玩耍'), labels('互动')
     menus_ok = (all(any(t.startswith(k) for t in pl_l) for k in ('深度思考', '服务器繁忙', '震惊'))

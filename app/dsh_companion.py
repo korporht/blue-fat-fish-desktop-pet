@@ -727,10 +727,14 @@ class PetCompanion(QObject):
         self.client.request('/session', {'cwd': self.project, 'title': self.CHAT_TITLE,
                                          'agentPreset': 'blue-fish'}, done, failed)
 
-    def add_her_menu(self, menu):
-        """Everything about her now lives in the pet's own right-click menu."""
-        chat = menu.addAction('在 dsh 里跟我聊天')
-        chat.triggered.connect(self.open_chat)
+    def add_chat_action(self, menu):
+        menu.addAction('在 dsh 里跟我聊天').triggered.connect(self.open_chat)
+
+    def add_task_menu(self, menu):
+        """Session controls; standalone mode replaces them with one hint line."""
+        if self.mode != 'dsh':
+            menu.addAction('切到「跟随 dsh」后才能管理任务').setEnabled(False)
+            return
         if self.session_items:
             sessions = menu.addMenu('当前会话')
             for text, identity in self.session_items:
@@ -749,27 +753,30 @@ class PetCompanion(QObject):
         stop.setEnabled(self.connected and bool(self.session_id) and not self.creating)
         stop.triggered.connect(self.cancel)
         menu.addSeparator()
-        todo = menu.addMenu('她的待办')
-        todo.addAction('添加…').triggered.connect(self.add_todo)
-        todo.addAction('看看清单').triggered.connect(lambda: self.report(self.todos.describe()))
+        menu.addAction('看看这个会话用了多少').triggered.connect(self.usage_report)
+
+    def add_todo_menu(self, menu):
+        menu.addAction('添加…').triggered.connect(self.add_todo)
+        menu.addAction('看看清单').triggered.connect(lambda: self.report(self.todos.describe()))
+        if self.todos.open_items():
+            menu.addSeparator()
         for item in self.todos.open_items()[:8]:
             when = describe_due(item.get('due')) + ' ' if item.get('due') else ''
-            sub = todo.addMenu((when + item['text'])[:34])
+            sub = menu.addMenu((when + item['text'])[:34])
             sub.addAction('完成').triggered.connect(
                 lambda _=False, i=item['id']: (self.todos.complete(i), self.todo_refresh(), self.report('搞定一件～')))
             sub.addAction('删除').triggered.connect(
                 lambda _=False, i=item['id']: (self.todos.remove(i), self.todo_refresh(), self.report('删掉啦。')))
-        todo.addAction('清除已完成').triggered.connect(lambda: (self.todos.clear_done(), self.report('已清理。')))
-        menu.addAction('看看这个会话用了多少').triggered.connect(self.usage_report)
+        menu.addAction('清除已完成').triggered.connect(lambda: (self.todos.clear_done(), self.report('已清理。')))
+
+    def add_her_menu(self, menu):
+        """The quiet half: replay, memory, reporting and notices."""
+        menu.addAction('重看她的上一句').triggered.connect(lambda: self.show_reply(self.last_persona_reply))
+        memory = menu.addMenu('她的记忆')
+        memory.addAction('查看长期记忆').triggered.connect(lambda: self.report(self.memory.describe()))
+        memory.addAction('清除近期聊天').triggered.connect(lambda: self.clear_memory(False))
+        memory.addAction('清除长期记忆').triggered.connect(lambda: self.clear_memory(True))
         menu.addSeparator()
-        self.add_connection_menu(menu)
-        self.add_voice_menu(menu)
-        modes = menu.addMenu('陪伴方式')
-        for mode, label in (('standalone', '独立陪伴'), ('dsh', '跟随 dsh')):
-            action = modes.addAction(label)
-            action.setCheckable(True)
-            action.setChecked(self.mode == mode)
-            action.triggered.connect(lambda _=False, selected=mode: self.set_mode(selected))
         reports = menu.addAction('主动汇报任务进展')
         reports.setCheckable(True)
         reports.setChecked(self.reports_enabled)
@@ -778,11 +785,6 @@ class PetCompanion(QObject):
         notices.setCheckable(True)
         notices.setChecked(self.notifications_enabled)
         notices.triggered.connect(self.set_notifications)
-        menu.addAction('重看她的上一句').triggered.connect(lambda: self.show_reply(self.last_persona_reply))
-        memory = menu.addMenu('她的记忆')
-        memory.addAction('查看长期记忆').triggered.connect(lambda: self.report(self.memory.describe()))
-        memory.addAction('清除近期聊天').triggered.connect(lambda: self.clear_memory(False))
-        memory.addAction('清除长期记忆').triggered.connect(lambda: self.clear_memory(True))
 
     def _choose_folder(self):
         folder = QFileDialog.getExistingDirectory(None, '选择工作目录', self.project)

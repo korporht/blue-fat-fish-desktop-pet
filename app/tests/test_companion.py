@@ -444,12 +444,23 @@ class CompanionTests(unittest.TestCase):
         self.assertEqual(self.comp.last_persona_reply, '')
         self.assertEqual(self.comp.memory.data['recent'], [])
 
-    def test_her_menu_lists_every_control_without_a_window(self):
-        from PySide6.QtWidgets import QMenu
-        menu = QMenu()
-        self.comp.add_her_menu(menu)
-        labels = [action.text() for action in menu.actions()]
-        for expected in ('在 dsh 里跟我聊天', '她的待办', '看看这个会话用了多少', '系统通知（完成 / 待确认）', '她的记忆'):
-            self.assertIn(expected, labels)
+    def test_menu_stays_one_column_with_grouped_submenus(self):
+        menu = self.pet.build_menu()
+        try:
+            top = [action.text() for action in menu.actions() if action.text()]
+            for expected in ('在 dsh 里跟我聊天', '任务', '她的待办', '互动', '外观与位置', '连接与语音', '她',
+                             '操作说明', '退出'):
+                self.assertIn(expected, top)
+            self.assertEqual(top[-1], '退出')
+            self.assertLessEqual(len([t for t in top if t]), 9)          # few rows: never wraps into two columns
+            self.assertLess(menu.sizeHint().height(), 620)
+            def sub(label):
+                return next(a.menu() for a in menu.actions() if a.menu() and a.text() == label)
+            self.assertIn('看看这个会话用了多少', [a.text() for a in sub('任务').actions()])
+            self.assertIn('系统通知（完成 / 待确认）', [a.text() for a in sub('她').actions()])
+            self.assertIn('摸尾巴', [a.text() for a in sub('互动').actions()])
+            self.assertIn('投喂', [a.text() for a in sub('互动').actions()])
+        finally:
+            menu.deleteLater()
 
 if __name__=='__main__': unittest.main()
