@@ -1678,6 +1678,7 @@ def main():
         pet._toast = Toast()          # keep a ref: the notice card is reused, not recreated
         pet._assistant.notify.connect(
             lambda kind, title, body: pet._toast.show_toast(title, body))
+        _wire_control_api(pet, app, args.data_dir or os.path.join(base, 'userdata'))
         app.aboutToQuit.connect(pet._toast.close)
         app.aboutToQuit.connect(pet._assistant.shutdown)
     app.aboutToQuit.connect(pet.save_preferences)
@@ -2200,6 +2201,27 @@ class _FakePress(_FakeEvt):
         return QPointF(500.0, 500.0)
 
 
+
+def _wire_control_api(pet, app, data_dir):
+    """Local /say /play /emote for other tools; loopback + token, see app/pet_api.py."""
+    from pet_api import PetApi
+    from conversation_reactions import keyword_reaction
+    api = PetApi(data_dir)
+    assistant = pet._assistant
+    api.say_requested.connect(lambda text, speak: assistant.report(text, speak=speak))
+    api.play_requested.connect(lambda action: pet.do_action(action, 0))
+    api.emote_requested.connect(lambda text: assistant.react(keyword_reaction(text)))
+    refresh = QTimer(app, timeout=lambda: api.set_state(
+        state=pet.state, anim=pet.anim.name if pet.anim else '', mode=assistant.mode,
+        busy=assistant.busy, connected=assistant.connected, visible=pet.isVisible()))
+    refresh.start(500)
+    pet._api = api
+    pet._api_timer = refresh
+    try:
+        api.start()
+    except OSError:
+        pet._api = None
+    app.aboutToQuit.connect(api.stop)
 
 if __name__ == '__main__':
     try:
